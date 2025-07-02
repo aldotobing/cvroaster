@@ -469,9 +469,9 @@ export default function CVReviewer() {
               </GlassCard>
 
               {/* File Upload */}
-              <GlassCard className="mb-8 p-8" style={{ position: 'relative', zIndex: 1 }}>
+              <GlassCard className="mb-8 p-4 sm:p-6 md:p-8" style={{ position: 'relative', zIndex: 1 }}>
                 <motion.div
-                  className={`border-3 border-dashed rounded-2xl p-12 text-center transition-all duration-500 ${
+                  className={`border-3 border-dashed rounded-2xl p-4 sm:p-8 md:p-12 text-center transition-all duration-500 ${
                     dragActive
                       ? "border-indigo-400 bg-indigo-100/50 dark:bg-indigo-500/20 scale-105"
                       : file
@@ -488,68 +488,88 @@ export default function CVReviewer() {
                   <motion.div
                     animate={dragActive ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
                     transition={{ duration: 0.3 }}
+                    className="w-full"
                   >
                     {file ? (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", bounce: 0.5 }}
+                        className="w-full"
                       >
-                        <Star className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+                        <Star className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 mx-auto mb-3 sm:mb-4" />
+                        <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 mb-2 break-words px-2">
                           Ready to roast! 🎉
                         </p>
-                        <p className="text-lg text-gray-700 dark:text-gray-300">
+                        <p className="text-sm sm:text-base md:text-lg text-gray-700 dark:text-gray-300 break-all px-2">
                           {file.name}
                         </p>
                       </motion.div>
                     ) : (
-                      <>
+                      <div className="w-full">
                         <motion.div
                           animate={{ y: [0, -10, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          <Upload className="w-16 h-16 text-indigo-400 mx-auto mb-6" />
+                          <Upload className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-400 mx-auto mb-4 sm:mb-6" />
                         </motion.div>
-                        <p className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-3">
+                        <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-200 mb-2 sm:mb-3 px-2">
                           {dragActive ? "Drop it like it's hot! 🔥" : "Drop your CV here or click to browse"}
                         </p>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6 text-lg">
+                        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
                           PDF or DOCX • Max 5MB
                         </p>
-                      </>
+                      </div>
                     )}
                     
-                    <input
-                      type="file"
-                      accept=".pdf,.docx"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Button 
-                      asChild 
-                      className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-3 px-8 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <FileText className="w-5 h-5 mr-2" />
-                        {file ? "Choose Different File" : "Choose File"}
-                      </label>
-                    </Button>
+                    <div className="mt-4 sm:mt-6">
+                      <input
+                        type="file"
+                        accept=".pdf,.docx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button 
+                        asChild 
+                        className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+                      >
+                        <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center">
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                          {file ? "Choose Different File" : "Choose File"}
+                        </label>
+                      </Button>
+                    </div>
                   </motion.div>
                 </motion.div>
                 
-                <motion.div 
-                  className="mt-8 pt-6 border-t border-white/20"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <LanguageSelector 
-                    language={language} 
-                    onLanguageChange={setLanguage}
-                  />
-                </motion.div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-white/20">
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="w-full sm:w-auto"
+                  >
+                    <LanguageSelector 
+                      language={language} 
+                      onLanguageChange={setLanguage}
+                    />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-xs text-gray-500 dark:text-gray-400 w-full sm:max-w-[280px]"
+                  >
+                    <div className="flex items-start">
+                      <span className="mr-2 mt-0.5 flex-shrink-0">🔒</span>
+                      <span className="break-words">
+                        <span className="font-medium">Your privacy is protected</span>: 
+                        Your CV is processed entirely in your browser. Nothing is sent to any server, and no data is stored or collected.
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
               </GlassCard>
 
               {/* Error Display */}
@@ -569,34 +589,40 @@ export default function CVReviewer() {
               )}
 
               {/* Review Button */}
-              <div className="text-center mb-12">
+              <div className="text-center mb-8 sm:mb-12 px-4 sm:px-0">
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full sm:w-auto"
                 >
                   <Button
                     onClick={handleReview}
                     disabled={!file || isProcessing}
-                    size="lg"
-                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-10 py-3 text-lg shadow-lg hover:shadow-orange-500/25 transition-all duration-300 rounded-full"
+                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-lg hover:shadow-orange-500/25 transition-all duration-300 rounded-full"
                   >
                     {isProcessing ? (
-                      <>
+                      <div className="flex items-center justify-center">
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="mr-2"
                         >
-                          <Zap className="w-6 h-6 mr-3" />
+                          <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
                         </motion.div>
-                        Roasting your CV...
-                      </>
+                        <span>Roasting your CV...</span>
+                      </div>
                     ) : (
-                      <>
-                        <Flame className="w-6 h-6 mr-3" />
-                        Let's Roast This CV! 🔥
-                      </>
+                      <div className="flex items-center justify-center">
+                        <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                        <span>Roast My CV</span>
+                      </div>
                     )}
                   </Button>
+                  {!file && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                      Upload your CV to get started
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
@@ -717,6 +743,8 @@ export default function CVReviewer() {
               @aldo_tobing
             </a>
           </p>
+          
+
         </motion.footer>
       </div>
     </div>
