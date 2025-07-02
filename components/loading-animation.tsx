@@ -17,11 +17,19 @@ export default function LoadingAnimation() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+      setCurrentMessageIndex((prevIndex) => {
+        // Stop at the last message
+        if (prevIndex < messages.length - 1) {
+          return prevIndex + 1;
+        }
+        // Clear the interval when we reach the last message
+        clearInterval(interval);
+        return prevIndex;
+      });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
     <motion.div
