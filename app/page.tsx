@@ -497,7 +497,7 @@ export default function CVReviewer() {
                       >
                         <Star className="w-16 h-16 text-green-500 mx-auto mb-4" />
                         <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-                          Perfect! 🎉
+                          Ready to roast! 🎉
                         </p>
                         <p className="text-lg text-gray-700 dark:text-gray-300">
                           {file.name}
