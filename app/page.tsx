@@ -220,16 +220,21 @@ export default function CVReviewer() {
 
     try {
       const text = await parseFile(file);
+
+      // Store the parsed text
+      const parsedText = text;
+
       const reviewResult = await reviewCV(text, jobRole, language);
       setReview(reviewResult);
 
-      // Save to localStorage
+      // Save to localStorage with the parsed text
       localStorage.setItem(
         "lastReview",
         JSON.stringify({
           fileName: file.name,
           jobRole,
           review: reviewResult,
+          parsedText, // Store the parsed text
           timestamp: Date.now(),
         })
       );
@@ -819,6 +824,10 @@ export default function CVReviewer() {
                     review={review}
                     fileName={file?.name || ""}
                     jobRole={jobRole}
+                    originalCvText={
+                      JSON.parse(localStorage.getItem("lastReview") || "{}")
+                        .parsedText || ""
+                    }
                   />
                 </GlassCard>
               </div>
