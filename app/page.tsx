@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from 'react-dom';
+import { createPortal } from "react-dom";
 import {
   Flame,
   Sun,
@@ -34,6 +34,8 @@ import { generatePDF } from "@/lib/pdf-generator";
 import type { CVReview } from "@/types/cv-review";
 import ReviewResults from "@/components/review-results";
 import LoadingAnimation from "@/components/loading-animation";
+import CVTemplatesList from "@/components/cv-templates-list";
+import { useRef as useShareRef } from "react";
 
 const motivationalQuotes = [
   "Your dream job is just one great CV away! ✨",
@@ -66,12 +68,20 @@ const BackgroundElements = () => {
           key={i}
           className="absolute text-2xl opacity-5 dark:opacity-10"
           initial={{
-            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 0),
-            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 0),
+            x:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerWidth : 0),
+            y:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerHeight : 0),
           }}
           animate={{
-            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 0),
-            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 0),
+            x:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerWidth : 0),
+            y:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerHeight : 0),
             rotate: 360,
           }}
           transition={{
@@ -92,7 +102,7 @@ type MotionDivProps = React.ComponentProps<typeof motion.div>;
 type GlassCardProps = {
   children: React.ReactNode;
   className?: string;
-} & Omit<MotionDivProps, 'className' | 'children'>;
+} & Omit<MotionDivProps, "className" | "children">;
 
 const GlassCard = ({ children, className = "", ...props }: GlassCardProps) => (
   <motion.div
@@ -109,7 +119,11 @@ export default function CVReviewer() {
   const [file, setFile] = useState<File | null>(null);
   const [jobRole, setJobRole] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestionsPosition, setSuggestionsPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [suggestionsPosition, setSuggestionsPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -118,7 +132,7 @@ export default function CVReviewer() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [currentQuote, setCurrentQuote] = useState("");
-  const [language, setLanguage] = useState<'english' | 'indonesian'>('english');
+  const [language, setLanguage] = useState<"english" | "indonesian">("english");
   const [showConfetti, setShowConfetti] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -133,8 +147,8 @@ export default function CVReviewer() {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -247,7 +261,9 @@ export default function CVReviewer() {
               key={i}
               className="absolute text-2xl opacity-90"
               style={{
-                filter: isDarkMode ? 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.7))' : 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.3))'
+                filter: isDarkMode
+                  ? "drop-shadow(0 0 4px rgba(255, 255, 255, 0.7))"
+                  : "drop-shadow(0 0 4px rgba(0, 0, 0, 0.3))",
               }}
               initial={{
                 x: Math.random() * window.innerWidth,
@@ -266,7 +282,11 @@ export default function CVReviewer() {
                 ease: "easeOut",
               }}
             >
-              {floatingEmojis[Math.floor(Math.random() * floatingEmojis.length)]}
+              {
+                floatingEmojis[
+                  Math.floor(Math.random() * floatingEmojis.length)
+                ]
+              }
             </motion.div>
           ))}
         </div>
@@ -283,7 +303,7 @@ export default function CVReviewer() {
       }`}
     >
       {/* Animated background gradient */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           background: isDarkMode
@@ -291,10 +311,10 @@ export default function CVReviewer() {
             : `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.1) 0%, transparent 50%)`,
         }}
       />
-      
+
       <BackgroundElements />
       <Confetti />
-      
+
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <motion.div
@@ -304,20 +324,20 @@ export default function CVReviewer() {
           className="text-center mb-12"
         >
           <div className="flex items-center justify-between mb-6">
-            <motion.div 
+            <motion.div
               className="flex items-center gap-3"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
               <motion.div
-                animate={{ 
+                animate={{
                   scale: [1, 1.1, 1],
-                  rotate: [0, 5, 0, -5, 0]
+                  rotate: [0, 5, 0, -5, 0],
                 }}
-                transition={{ 
+                transition={{
                   duration: 3,
                   repeat: Infinity,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
               >
                 <Flame className="w-10 h-10 text-orange-500" />
@@ -326,12 +346,12 @@ export default function CVReviewer() {
                 CV Roaster
               </h1>
             </motion.div>
-            
+
             <GlassCard className="p-2">
               <div className="flex items-center gap-2">
                 <Sun className="w-4 h-4 text-yellow-500" />
-                <Switch 
-                  checked={isDarkMode} 
+                <Switch
+                  checked={isDarkMode}
                   onCheckedChange={setIsDarkMode}
                   className="data-[state=checked]:bg-indigo-600"
                 />
@@ -339,14 +359,14 @@ export default function CVReviewer() {
               </div>
             </GlassCard>
           </div>
-          
-          <motion.p 
+
+          <motion.p
             className="text-xl text-gray-700 dark:text-gray-200 font-medium"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Drop your CV here and let's roast it (constructively) 
+            Drop your CV here and let's roast it (constructively)
             <motion.span
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -367,6 +387,8 @@ export default function CVReviewer() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl mx-auto"
             >
+              {/* CV Templates & Examples */}
+              <CVTemplatesList />
               {/* Job Role Input */}
               <GlassCard className="mb-8 p-8 relative">
                 <div className="flex items-center gap-3 mb-6">
@@ -376,7 +398,10 @@ export default function CVReviewer() {
                   >
                     <Target className="w-6 h-6 text-indigo-500" />
                   </motion.div>
-                  <Label htmlFor="jobRole" className="text-xl font-bold text-gray-800 dark:text-white">
+                  <Label
+                    htmlFor="jobRole"
+                    className="text-xl font-bold text-gray-800 dark:text-white"
+                  >
                     Target Job Role? 🎯
                   </Label>
                 </div>
@@ -390,20 +415,20 @@ export default function CVReviewer() {
                       const value = e.target.value;
                       setJobRole(value);
                       setShowSuggestions(value.length > 0);
-                      
+
                       // Update position based on input element
                       if (inputRef.current) {
                         const rect = inputRef.current.getBoundingClientRect();
                         setSuggestionsPosition({
                           top: rect.bottom + window.scrollY + 4,
                           left: rect.left + window.scrollX,
-                          width: rect.width
+                          width: rect.width,
                         });
                       }
-                      
+
                       // Filter roles based on input
                       if (value.length > 0) {
-                        const filtered = commonJobRoles.filter(role =>
+                        const filtered = commonJobRoles.filter((role) =>
                           role.toLowerCase().includes(value.toLowerCase())
                         );
                         setFilteredRoles(filtered.slice(0, 5));
@@ -419,46 +444,50 @@ export default function CVReviewer() {
                           setSuggestionsPosition({
                             top: rect.bottom + window.scrollY + 4,
                             left: rect.left + window.scrollX,
-                            width: rect.width
+                            width: rect.width,
                           });
                         }
                       }
                     }}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 200)
+                    }
                     className="w-full pl-4 pr-4 py-3 text-base text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                   />
-                  {showSuggestions && filteredRoles.length > 0 && createPortal(
-                    <motion.div 
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 10 }}
-                      exit={{ opacity: 0, y: 5 }}
-                      style={{
-                        position: 'absolute',
-                        top: `${suggestionsPosition.top}px`,
-                        left: `${suggestionsPosition.left}px`,
-                        width: `${suggestionsPosition.width}px`,
-                        zIndex: 9999,
-                      }}
-                      className="bg-white dark:backdrop-blur-sm dark:bg-gray-800/95 border border-gray-200 dark:border-gray-700/70 rounded-lg shadow-lg overflow-hidden"
-                    >
-                      {filteredRoles.map((role, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80 cursor-pointer text-base transition-colors duration-150 border-b border-gray-100 dark:border-gray-700/50 last:border-0"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setJobRole(role);
-                            setShowSuggestions(false);
-                          }}
-                        >
-                          {role}
-                        </div>
-                      ))}
-                    </motion.div>,
-                    document.body
-                  )}
+                  {showSuggestions &&
+                    filteredRoles.length > 0 &&
+                    createPortal(
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 10 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        style={{
+                          position: "absolute",
+                          top: `${suggestionsPosition.top}px`,
+                          left: `${suggestionsPosition.left}px`,
+                          width: `${suggestionsPosition.width}px`,
+                          zIndex: 9999,
+                        }}
+                        className="bg-white dark:backdrop-blur-sm dark:bg-gray-800/95 border border-gray-200 dark:border-gray-700/70 rounded-lg shadow-lg overflow-hidden"
+                      >
+                        {filteredRoles.map((role, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/80 cursor-pointer text-base transition-colors duration-150 border-b border-gray-100 dark:border-gray-700/50 last:border-0"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setJobRole(role);
+                              setShowSuggestions(false);
+                            }}
+                          >
+                            {role}
+                          </div>
+                        ))}
+                      </motion.div>,
+                      document.body
+                    )}
                 </div>
-                <motion.p 
+                <motion.p
                   className="text-sm text-gray-600 dark:text-gray-300 mt-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -469,7 +498,10 @@ export default function CVReviewer() {
               </GlassCard>
 
               {/* File Upload */}
-              <GlassCard className="mb-8 p-4 sm:p-6 md:p-8" style={{ position: 'relative', zIndex: 1 }}>
+              <GlassCard
+                className="mb-8 p-4 sm:p-6 md:p-8"
+                style={{ position: "relative", zIndex: 1 }}
+              >
                 <motion.div
                   className={`border-3 border-dashed rounded-2xl p-4 sm:p-8 md:p-12 text-center transition-all duration-500 ${
                     dragActive
@@ -486,7 +518,11 @@ export default function CVReviewer() {
                   transition={{ duration: 0.3 }}
                 >
                   <motion.div
-                    animate={dragActive ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
+                    animate={
+                      dragActive
+                        ? { scale: 1.1, rotate: 5 }
+                        : { scale: 1, rotate: 0 }
+                    }
                     transition={{ duration: 0.3 }}
                     className="w-full"
                   >
@@ -514,14 +550,16 @@ export default function CVReviewer() {
                           <Upload className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-400 mx-auto mb-4 sm:mb-6" />
                         </motion.div>
                         <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-200 mb-2 sm:mb-3 px-2">
-                          {dragActive ? "Drop it like it's hot! 🔥" : "Drop your CV here or click to browse"}
+                          {dragActive
+                            ? "Drop it like it's hot! 🔥"
+                            : "Drop your CV here or click to browse"}
                         </p>
                         <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
                           PDF or DOCX • Max 5MB
                         </p>
                       </div>
                     )}
-                    
+
                     <div className="mt-4 sm:mt-6">
                       <input
                         type="file"
@@ -530,11 +568,14 @@ export default function CVReviewer() {
                         className="hidden"
                         id="file-upload"
                       />
-                      <Button 
-                        asChild 
+                      <Button
+                        asChild
                         className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-bold py-2 sm:py-3 px-4 sm:px-8 text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
                       >
-                        <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center">
+                        <label
+                          htmlFor="file-upload"
+                          className="cursor-pointer flex items-center justify-center"
+                        >
                           <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                           {file ? "Choose Different File" : "Choose File"}
                         </label>
@@ -542,7 +583,7 @@ export default function CVReviewer() {
                     </div>
                   </motion.div>
                 </motion.div>
-                
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-white/20">
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
@@ -550,8 +591,8 @@ export default function CVReviewer() {
                     transition={{ delay: 0.4 }}
                     className="w-full sm:w-auto"
                   >
-                    <LanguageSelector 
-                      language={language} 
+                    <LanguageSelector
+                      language={language}
                       onLanguageChange={setLanguage}
                     />
                   </motion.div>
@@ -564,8 +605,12 @@ export default function CVReviewer() {
                     <div className="flex items-start">
                       <span className="mr-2 mt-0.5 flex-shrink-0">🔒</span>
                       <span className="break-words">
-                        <span className="font-medium">Your privacy is protected</span>: 
-                        Your CV is processed entirely in your browser. Nothing is sent to any server, and no data is stored or collected.
+                        <span className="font-medium">
+                          Your privacy is protected
+                        </span>
+                        : Your CV is processed entirely in your browser. Nothing
+                        is sent to any server, and no data is stored or
+                        collected.
                       </span>
                     </div>
                   </motion.div>
@@ -604,7 +649,11 @@ export default function CVReviewer() {
                       <div className="flex items-center justify-center">
                         <motion.div
                           animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
                           className="mr-2"
                         >
                           <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -634,7 +683,7 @@ export default function CVReviewer() {
                   transition={{ delay: 0.8 }}
                   className="text-center"
                 >
-                  <motion.p 
+                  <motion.p
                     className="text-lg text-gray-600 dark:text-gray-300 italic font-medium max-w-2xl mx-auto"
                     animate={{ scale: [1, 1.01, 1] }}
                     transition={{ duration: 4, repeat: Infinity }}
@@ -654,7 +703,10 @@ export default function CVReviewer() {
             >
               <div className="max-w-5xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <Button
                       onClick={resetApp}
                       className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full shadow-lg"
@@ -663,8 +715,11 @@ export default function CVReviewer() {
                       Review Another CV
                     </Button>
                   </motion.div>
-                  
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <Button
                       onClick={handleDownloadPDF}
                       className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-full shadow-lg"
@@ -674,8 +729,64 @@ export default function CVReviewer() {
                     </Button>
                   </motion.div>
                 </div>
-                
+
                 <GlassCard className="p-8">
+                  {/* Shareable Review Section */}
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+                    <div className="font-semibold text-lg text-indigo-700 dark:text-indigo-300">
+                      Share your review:
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        asChild
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                        title="Share on Twitter"
+                      >
+                        <a
+                          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                            `Check out my CV review for ${
+                              file?.name || "my CV"
+                            } targeting ${jobRole}! 🚀\n\nScore: ${
+                              review?.score
+                            }/100\n${window?.location?.href}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Tweet
+                        </a>
+                      </Button>
+                      <Button
+                        asChild
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                        title="Share via Email"
+                      >
+                        <a
+                          href={`mailto:?subject=My CV Review Results&body=${encodeURIComponent(
+                            `Check out my CV review for ${
+                              file?.name || "my CV"
+                            } targeting ${jobRole}!\n\nScore: ${
+                              review?.score
+                            }/100\n${window?.location?.href}`
+                          )}`}
+                        >
+                          Email
+                        </a>
+                      </Button>
+                      <Button
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+                        title="Copy summary to clipboard"
+                        onClick={() => {
+                          const summary = `CV Review for ${
+                            file?.name || "my CV"
+                          } targeting ${jobRole}\nScore: ${review?.score}/100`;
+                          navigator.clipboard.writeText(summary);
+                        }}
+                      >
+                        Copy Summary
+                      </Button>
+                    </div>
+                  </div>
                   <ReviewResults
                     review={review}
                     fileName={file?.name || ""}
@@ -700,7 +811,7 @@ export default function CVReviewer() {
           className="text-center mt-16"
         >
           <p className="text-gray-500 dark:text-gray-400 text-base">
-            Powered by caffeine 
+            Powered by caffeine
             <motion.span
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity }}
@@ -708,7 +819,7 @@ export default function CVReviewer() {
             >
               <Coffee className="w-4 h-4 inline text-amber-600" />
             </motion.span>
-            and code • Made with 
+            and code • Made with
             <motion.span
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -719,23 +830,23 @@ export default function CVReviewer() {
             for job seekers
           </p>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-            © {new Date().getFullYear()} CV Roaster • 
-            <a 
-              href="https://twitter.com/aldo_tobing" 
-              target="_blank" 
+            © {new Date().getFullYear()} CV Roaster •
+            <a
+              href="https://twitter.com/aldo_tobing"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="14" 
-                height="14" 
-                viewBox="0 0 24 24" 
-                fill="currentColor" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="inline mx-1"
               >
                 <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
@@ -743,8 +854,6 @@ export default function CVReviewer() {
               @aldo_tobing
             </a>
           </p>
-          
-
         </motion.footer>
       </div>
     </div>
