@@ -47,10 +47,10 @@ export default function CVTemplatesList() {
               <a
                 href={tpl.file}
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow transition-colors"
+                className="inline-flex items-center justify-center p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow transition-colors"
+                title={`Download ${tpl.name}`}
               >
-                <Download className="w-4 h-4" />
-                Download
+                <Download className="w-5 h-5" />
               </a>
             </li>
           ))}

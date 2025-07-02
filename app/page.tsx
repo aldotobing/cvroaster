@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,10 @@ import {
   Coffee,
   Rocket,
   ChevronDown,
+  Mail,
+  Twitter,
+  Clipboard,
+  MessageCircle,
 } from "lucide-react";
 import { commonJobRoles } from "@/data/job-roles";
 import { LanguageSelector } from "@/components/language-selector";
@@ -732,6 +736,7 @@ export default function CVReviewer() {
 
                 <GlassCard className="p-8">
                   {/* Shareable Review Section */}
+                  {/* Shareable Review Section */}
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
                     <div className="font-semibold text-lg text-indigo-700 dark:text-indigo-300">
                       Share your review:
@@ -739,7 +744,7 @@ export default function CVReviewer() {
                     <div className="flex gap-2 flex-wrap">
                       <Button
                         asChild
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center"
                         title="Share on Twitter"
                       >
                         <a
@@ -753,12 +758,35 @@ export default function CVReviewer() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Tweet
+                          <span className="flex items-center justify-center">
+                            <Twitter size={20} className="w-5 h-5" />
+                          </span>
                         </a>
                       </Button>
                       <Button
                         asChild
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                        className="bg-green-500 hover:bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center"
+                        title="Share on WhatsApp"
+                      >
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Check out my CV review for ${
+                              file?.name || "my CV"
+                            } targeting ${jobRole}! 🚀\n\nScore: ${
+                              review?.score
+                            }/100\n${window?.location?.href}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="flex items-center justify-center">
+                            <MessageCircle size={20} className="w-5 h-5" />
+                          </span>
+                        </a>
+                      </Button>
+                      <Button
+                        asChild
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
                         title="Share via Email"
                       >
                         <a
@@ -770,11 +798,11 @@ export default function CVReviewer() {
                             }/100\n${window?.location?.href}`
                           )}`}
                         >
-                          Email
+                          <Mail size={20} className="w-5 h-5" />
                         </a>
                       </Button>
                       <Button
-                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+                        className="bg-gray-600 hover:bg-gray-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
                         title="Copy summary to clipboard"
                         onClick={() => {
                           const summary = `CV Review for ${
@@ -783,7 +811,7 @@ export default function CVReviewer() {
                           navigator.clipboard.writeText(summary);
                         }}
                       >
-                        Copy Summary
+                        <Clipboard size={20} className="w-5 h-5" />
                       </Button>
                     </div>
                   </div>
