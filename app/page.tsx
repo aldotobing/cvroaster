@@ -2,7 +2,8 @@
 
 import React from "react";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Turnstile } from "@/components/Turnstile";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import {
@@ -131,6 +132,7 @@ export default function CVReviewer() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showTurnstile, setShowTurnstile] = useState(false);
   const [review, setReview] = useState<CVReview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -212,29 +214,34 @@ export default function CVReviewer() {
     }
   };
 
-  const handleReview = async () => {
+  const handleReview = useCallback(async () => {
     if (!file) return;
+    
+    // Show Turnstile verification
+    setShowTurnstile(true);
+  }, [file]);
 
+  const handleTurnstileVerify = useCallback(async (token: string) => {
+    setShowTurnstile(false);
+    
+    if (!file) return;
+    
     setIsProcessing(true);
     setError(null);
 
     try {
       const text = await parseFile(file);
-
-      // Store the parsed text
-      const parsedText = text;
-
       const reviewResult = await reviewCV(text, jobRole, language);
       setReview(reviewResult);
 
-      // Save to localStorage with the parsed text
+      // Save to localStorage
       localStorage.setItem(
         "lastReview",
         JSON.stringify({
           fileName: file.name,
           jobRole,
           review: reviewResult,
-          parsedText, // Store the parsed text
+          parsedText: text,
           timestamp: Date.now(),
         })
       );
@@ -245,7 +252,7 @@ export default function CVReviewer() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [file, jobRole, language]);
 
   const handleDownloadPDF = () => {
     if (review && file) {
@@ -649,33 +656,73 @@ export default function CVReviewer() {
                   whileTap={{ scale: 0.98 }}
                   className="w-full sm:w-auto"
                 >
-                  <Button
-                    onClick={handleReview}
-                    disabled={!file || isProcessing}
-                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-lg hover:shadow-orange-500/25 transition-all duration-300 rounded-full"
-                  >
-                    {isProcessing ? (
-                      <div className="flex items-center justify-center">
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                          className="mr-2"
-                        >
-                          <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </motion.div>
-                        <span>Roasting your CV...</span>
-                      </div>
+                  <div className="w-full flex flex-col items-center gap-4">
+                    {!showTurnstile ? (
+                      <Button
+                        onClick={() => setShowTurnstile(true)}
+                        disabled={!file || isProcessing}
+                        className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-lg hover:shadow-orange-500/25 transition-all duration-300 rounded-full"
+                      >
+                        {isProcessing ? (
+                          <div className="flex items-center justify-center">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{
+                                duration: 1,
+                                repeat: Infinity,
+                                ease: "linear",
+                              }}
+                              className="mr-2"
+                            >
+                              <Zap className="w-5 h-5" />
+                            </motion.div>
+                            <span>Roasting your CV...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                            <span>Roast My CV</span>
+                          </div>
+                        )}
+                      </Button>
                     ) : (
-                      <div className="flex items-center justify-center">
-                        <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                        <span>Roast My CV</span>
+                      <div className="w-full flex flex-col items-center gap-4 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="text-center mb-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-1">Verify You're Human</h3>
+                          <p className="text-sm text-gray-500">Complete this security check to help us prevent spam</p>
+                        </div>
+                        
+                        <div className="w-full max-w-xs">
+                          <Turnstile 
+                            key={showTurnstile ? 'turnstile-visible' : 'turnstile-hidden'}
+                            onVerify={handleTurnstileVerify}
+                            onError={() => {
+                              setError('Verification failed. Please try again.');
+                              setShowTurnstile(false);
+                            }}
+                            onExpire={() => {
+                              setError('Verification expired. Please try again.');
+                              setShowTurnstile(false);
+                            }}
+                            className="w-full flex justify-center"
+                          />
+                        </div>
+                        
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          This helps us keep the service safe and secure for everyone.
+                        </p>
+                        
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowTurnstile(false)}
+                          className="mt-2 text-sm text-gray-600 hover:text-gray-900"
+                          type="button"
+                        >
+                          Cancel Verification
+                        </Button>
                       </div>
                     )}
-                  </Button>
+                  </div>
                   {!file && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
                       Upload your CV to get started
