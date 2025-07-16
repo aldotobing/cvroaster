@@ -24,13 +24,15 @@ interface TurnstileProps {
   onError?: () => void;
   onExpire?: () => void;
   className?: string;
+  isVerified?: boolean;
 }
 
 export function Turnstile({ 
   onVerify, 
   onError, 
   onExpire, 
-  className = '' 
+  className = '',
+  isVerified = false
 }: TurnstileProps) {
   const widgetId = useRef<string | null>(null);
 
@@ -124,6 +126,22 @@ export function Turnstile({
     widgetId.current = id.toString();
     hasRendered.current = true;
   }, []); // No dependencies since we're using refs
+
+  // Render success state when verified
+  if (isVerified) {
+    return (
+      <div className={`turnstile-container ${className}`}>
+        <div className="w-full flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-green-700 dark:text-green-300">Verified</p>
+        </div>
+      </div>
+    );
+  }
 
   // Only render the container if we haven't rendered the widget yet
   if (hasRendered.current) {

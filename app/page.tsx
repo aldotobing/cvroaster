@@ -133,6 +133,7 @@ export default function CVReviewer() {
   const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTurnstile, setShowTurnstile] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [review, setReview] = useState<CVReview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -222,6 +223,12 @@ export default function CVReviewer() {
   }, [file]);
 
   const handleTurnstileVerify = useCallback(async (token: string) => {
+    // Show verified state
+    setIsVerified(true);
+    
+    // Wait for 1.5 seconds to show the verified state
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     setShowTurnstile(false);
     
     if (!file) return;
@@ -251,6 +258,7 @@ export default function CVReviewer() {
       );
     } finally {
       setIsProcessing(false);
+      setIsVerified(false);
     }
   }, [file, jobRole, language]);
 
@@ -704,6 +712,7 @@ export default function CVReviewer() {
                               setError('Verification expired. Please try again.');
                               setShowTurnstile(false);
                             }}
+                            isVerified={isVerified}
                             className="w-full flex justify-center"
                           />
                         </div>
