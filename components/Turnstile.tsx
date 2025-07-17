@@ -1,22 +1,51 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
+
+// Simple debounce utility function
+function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
+  let timeoutId: NodeJS.Timeout;
+  return function(this: any, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
 
 declare global {
   interface Window {
     turnstile: {
-      render: (container: string, options: {
-        sitekey: string;
-        callback: (token: string) => void;
-        appearance?: 'always' | 'execute' | 'interaction-only';
-        theme?: 'light' | 'dark' | 'auto';
-        language?: string;
-        'expired-callback'?: () => void;
-        'error-callback'?: () => void;
-      }) => string;
+      render: (container: string | HTMLElement, options: TurnstileOptions) => string;
       reset: (widgetId: string) => void;
+      getResponse: (widgetId?: string) => string;
+      isExpired: (widgetId?: string) => boolean;
+      remove: (widgetId: string) => void;
     };
   }
+}
+
+interface TurnstileOptions {
+  sitekey: string;
+  action?: string;
+  cData?: string;
+  callback?: (token: string) => void;
+  'error-callback'?: () => void;
+  'expired-callback'?: () => void;
+  'before-interactive-callback'?: () => void;
+  'after-interactive-callback'?: () => void;
+  'unsupported-callback'?: () => void;
+  theme?: 'light' | 'dark' | 'auto';
+  language?: string;
+  tabindex?: number;
+  'timeout-callback'?: () => void;
+  'response-field'?: boolean;
+  'response-field-name'?: string;
+  size?: 'normal' | 'compact' | 'flexible';
+  retry?: 'auto' | 'never';
+  'retry-interval'?: number;
+  'refresh-expired'?: 'auto' | 'manual' | 'never';
+  'refresh-timeout'?: number;
+  appearance?: 'always' | 'execute' | 'interaction-only';
+  'feedback-enabled'?: boolean;
 }
 
 interface TurnstileProps {
@@ -35,23 +64,113 @@ export function Turnstile({
   isVerified = false
 }: TurnstileProps) {
   const widgetId = useRef<string | null>(null);
-
-  // Track if the widget has been rendered
+  const widgetContainerRef = useRef<HTMLDivElement>(null);
   const hasRendered = useRef(false);
+
+  // Always use desktop style
+
+  // Handle widget rendering with proper cleanup
+  const renderTurnstile = useCallback(() => {
+    if (!window.turnstile || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+      return;
+    }
+
+    // Clean up previous instance if exists
+    if (widgetId.current) {
+      window.turnstile.remove(widgetId.current);
+      widgetId.current = null;
+    }
+
+    if (!widgetContainerRef.current) return;
+    
+    // Make sure the widget container is visible
+    if (widgetContainerRef.current) {
+      widgetContainerRef.current.style.opacity = '1';
+    }
+
+    // Always use normal size for desktop
+    
+    try {
+      const id = window.turnstile.render(widgetContainerRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        size: 'normal',
+        theme: 'light',
+        language: 'en',
+        callback: (token: string) => {
+          onVerify(token);
+        },
+        'expired-callback': () => {
+          onExpire?.();
+          if (widgetId.current) {
+            window.turnstile.reset(widgetId.current);
+          }
+        },
+        'error-callback': () => {
+          onError?.();
+        },
+        'unsupported-callback': () => {
+          onError?.();
+        },
+        appearance: 'always',
+        'refresh-expired': 'auto',
+        'retry': 'auto',
+        'retry-interval': 8000
+      });
+      
+      widgetId.current = id;
+      hasRendered.current = true;
+      
+      // Ensure the widget container is visible after render
+      if (widgetContainerRef.current) {
+        widgetContainerRef.current.style.opacity = '1';
+      }
+
+      // Force center alignment after render
+      setTimeout(() => {
+        if (widgetContainerRef.current) {
+          const iframe = widgetContainerRef.current.querySelector('iframe');
+          if (iframe) {
+            iframe.style.margin = '0 auto';
+            iframe.style.display = 'block';
+          }
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('Error rendering Turnstile:', error);
+      onError?.();
+    }
+  }, [onVerify, onError, onExpire]);
+
+  // Handle window resize to adjust widget size
+  useEffect(() => {
+    const handleResize = () => {
+      // Only re-render if needed
+      if (widgetId.current && window.turnstile) {
+        window.turnstile.remove(widgetId.current);
+        widgetId.current = null;
+        hasRendered.current = false;
+        renderTurnstile();
+      }
+    };
+
+    const debouncedResize = debounce(handleResize, 250);
+    window.addEventListener('resize', debouncedResize);
+
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+    };
+  }, [renderTurnstile]);
 
   // Load the Turnstile script only once
   useEffect(() => {
-    // Only proceed if not already rendered and we have a container
-    const container = document.getElementById('turnstile-widget');
-    if (hasRendered.current || !container) return;
+    if (hasRendered.current || !widgetContainerRef.current) return;
 
-    // Check if script is already loaded
     if (window.turnstile) {
       renderTurnstile();
       return;
     }
 
-    // Check if script is already being loaded
     if (document.getElementById('cf-turnstile-script')) {
       const checkTurnstile = setInterval(() => {
         if (window.turnstile) {
@@ -62,70 +181,25 @@ export function Turnstile({
       return () => clearInterval(checkTurnstile);
     }
 
-    // Load the script
     const script = document.createElement('script');
     script.id = 'cf-turnstile-script';
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.async = true;
     script.defer = true;
-    script.onload = () => {
-      renderTurnstile();
+    script.onload = renderTurnstile;
+    script.onerror = () => {
+      console.error('Failed to load Turnstile script');
+      onError?.();
     };
+    
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup function if component unmounts
       if (widgetId.current) {
-        window.turnstile?.reset(widgetId.current);
+        window.turnstile?.remove(widgetId.current);
       }
     };
-  }, []);
-
-  // Handle widget rendering - use ref to store the latest callbacks
-  const callbacksRef = useRef({ onVerify, onError, onExpire });
-  
-  // Update ref when callbacks change
-  useEffect(() => {
-    callbacksRef.current = { onVerify, onError, onExpire };
-  }, [onVerify, onError, onExpire]);
-
-  const renderTurnstile = useCallback(() => {
-    // Skip if already rendered or no container
-    const container = document.getElementById('turnstile-widget');
-    if (hasRendered.current || !container) return;
-    if (!window.turnstile || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
-      console.error('Turnstile not loaded or site key not set');
-      return;
-    }
-
-    // Clean up previous instance if exists
-    if (widgetId.current) {
-      window.turnstile.reset(widgetId.current);
-    }
-
-    // Render new instance with light theme and English language
-    const id = window.turnstile.render('#turnstile-widget', {
-      sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-      appearance: 'always',  // Force light theme
-      theme: 'light',       // Explicitly set light theme
-      language: 'en',       // Set language to English
-      callback: (token: string) => {
-        callbacksRef.current.onVerify(token);
-      },
-      'expired-callback': () => {
-        if (widgetId.current) {
-          window.turnstile.reset(widgetId.current);
-        }
-        callbacksRef.current.onExpire?.();
-      },
-      'error-callback': () => {
-        callbacksRef.current.onError?.();
-      },
-    });
-    
-    widgetId.current = id.toString();
-    hasRendered.current = true;
-  }, []); // No dependencies since we're using refs
+  }, [renderTurnstile, onError]);
 
   // Render success state when verified
   if (isVerified) {
@@ -143,21 +217,61 @@ export function Turnstile({
     );
   }
 
-  // Only render the container if we haven't rendered the widget yet
-  if (hasRendered.current) {
-    return (
-      <div className={`turnstile-container ${className}`}>
-        <div id="turnstile-widget" className="w-full flex justify-center" />
-      </div>
-    );
-  }
-
-  // Return a placeholder when not showing the widget
+  // Render the widget container with improved centering and consistent sizing
   return (
-    <div className={`turnstile-container ${className}`} data-theme="light">
-      <div id="turnstile-widget" className="w-full flex justify-center">
-        <div className="w-[300px] h-[65px] bg-gray-100 rounded-lg animate-pulse" />
-      </div>
+    <div 
+      className={`turnstile-container ${className}`}
+      style={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: '0 auto',
+        padding: '0',
+        textAlign: 'center',
+        minHeight: '78px', 
+        position: 'relative' 
+      }}
+    >
+      {/* Main widget container - always rendered but initially transparent */}
+      <div 
+        ref={widgetContainerRef}
+        className="cf-turnstile"
+        style={{
+          width: '100%',
+          maxWidth: '320px',
+          minHeight: '78px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto',
+          padding: '8px',
+          textAlign: 'center',
+          position: 'relative',
+          transition: 'opacity 0.2s ease-in-out',
+          opacity: hasRendered.current ? '1' : '0',
+          visibility: 'visible',
+          zIndex: 20
+        }}
+      />
+      
+      {/* Loading overlay - positioned absolutely and removed when widget is ready */}
+      {!hasRendered.current && (
+        <div 
+          style={{
+            position: 'absolute',
+            width: '320px',
+            height: '78px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'opacity 0.2s ease-in-out',
+            zIndex: 10
+          }}
+        >
+          <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md w-full h-full"></div>
+        </div>
+      )}
     </div>
   );
 }

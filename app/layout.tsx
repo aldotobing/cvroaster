@@ -41,9 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        {children}
+    <html lang="en" className="text-xs sm:text-sm md:text-base">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body className="text-inherit">
+        <div className="text-xs sm:text-sm md:text-base">
+          {children}
+        </div>
         <Analytics />
       </body>
     </html>

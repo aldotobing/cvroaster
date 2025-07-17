@@ -28,6 +28,47 @@ function createPrompt(cvText: string, jobRole: string, language: 'english' | 'in
     ? 'Provide the response in proper Bahasa Indonesia.' 
     : 'Provide the response in proper English.';
 
+  const scoringGuide = `
+SCORING GUIDE
+
+1. Content Relevance (25% Weight)
+   - 85-100: Highly relevant content with strong alignment to job requirements
+   - 70-84: Good relevance but could be more tailored
+   - 50-69: Some relevance but significant improvements needed
+   - 0-49: Little to no relevance to the job requirements
+
+2. ATS Optimization (25% Weight)
+   - 85-100: Excellent ATS optimization with proper keywords and formatting
+   - 70-84: Good ATS optimization but some improvements possible
+   - 50-69: Basic ATS optimization but needs significant work
+   - 0-49: Poor ATS optimization, likely to be filtered out
+
+3. Structure & Readability (20% Weight)
+   - 85-100: Exceptionally well-organized and easy to read
+   - 70-84: Good structure but could be more polished
+   - 50-69: Basic structure but needs improvement
+   - 0-49: Poor structure, difficult to read
+
+4. Skills & Experience Match (20% Weight)
+   - 85-100: Exceptional match with required skills and experience
+   - 70-84: Good match but some skills could be better highlighted
+   - 50-69: Some match but significant gaps exist
+   - 0-49: Poor match with required skills and experience
+
+5. Achievements & Impact (10% Weight)
+   - 85-100: Clear demonstration of impact with measurable results
+   - 70-84: Good achievements but could be more quantifiable
+   - 50-69: Some achievements mentioned but lack impact
+   - 0-49: Little to no demonstration of achievements
+
+SCORING INSTRUCTIONS:
+1. Score each criterion on a scale of 0-100
+2. Apply the weight to each score
+3. Sum the weighted scores for the final score
+4. Be consistent, fair, and objective in your assessment
+5. Provide specific, actionable feedback for each criterion
+`;
+
   return `You are an expert CV reviewer and career coach. Please provide a comprehensive review of the following CV for the job application. ${languageInstruction}
 
 **CV:**
@@ -35,27 +76,29 @@ ${cvText}
 
 **Job Position:** ${jobRole}
 
+${scoringGuide}
+
 **Response Format (JSON):**
 {
-  "score": 0-100, 
+  "score": 0-100, // Overall score calculated using the weighted scoring guide
   "strengths": ["Strength 1", "Strength 2", ...], 
   "weaknesses": ["Weakness 1", "Weakness 2", ...], 
   "structureFeedback": "Feedback about CV structure and organization",
   "grammarFeedback": "Feedback about grammar and clarity",
   "suggestions": ["Suggestion 1", "Suggestion 2", ...], 
   
-  "atsScore": 0-100, 
+  "atsScore": 0-100, // Score based on ATS Optimization criteria (0-100)
   "atsFeedback": "Detailed feedback about ATS compatibility",
   
   "skillGapAnalysis": {
     "missingSkills": ["Skill 1", "Skill 2", ...], 
     "trendingSkills": ["Trending Skill 1", ...], 
-    "skillMatchScore": 0-100, 
+    "skillMatchScore": 0-100, // Score based on Skills & Experience Match criteria (0-100)
     "recommendations": ["Recommendation 1", ...] 
   },
   
   "atsOptimization": {
-    "compatibilityScore": 0-100,
+    "compatibilityScore": 0-100, // Score based on ATS Optimization criteria (0-100)
     "missingKeywords": ["Keyword 1", ...], 
     "contentOptimization": "Detailed suggestions for ATS optimization",
     "formattingTips": ["Tip 1", ...], 
@@ -72,12 +115,15 @@ ${cvText}
 
 IMPORTANT NOTES:
 1. Return ONLY valid JSON without any additional text or markdown formatting
-2. All scores should be between 0-100
-3. Provide specific, actionable feedback
+2. All scores should be between 0-100 and follow the scoring guide
+3. Provide specific, actionable feedback tied to the scoring criteria
 4. For arrays, provide at least 3 items where applicable
 5. For missingKeywords, include both technical and soft skills from the job description
 6. For trendingSkills, consider the latest industry trends for this role
-7. For dynamicContent, tailor all suggestions specifically to the target job role`;
+7. For dynamicContent, tailor all suggestions specifically to the target job role
+8. Ensure consistency between scores and feedback
+9. Follow the scoring guide weights for calculating the overall score
+10. Be fair and objective in your assessment`;
 }
 
 async function callGeminiAPI(prompt: string): Promise<Omit<CVReview, "provider">> {

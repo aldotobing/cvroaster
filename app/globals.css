@@ -84,11 +84,53 @@ body {
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+/* Base styles for all elements */
+* {
+  @apply border-border;
+}
+
+/* Responsive base font size */
+html {
+  font-size: 14px;
+}
+
+/* Base body styles */
+body {
+  @apply bg-background text-foreground;
+  -webkit-text-size-adjust: 100%;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Mobile text size adjustments */
+@media (max-width: 640px) {
+  html {
+    font-size: 12px;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    font-size: 0.9rem;
+  }
+  
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.125rem; }
+  p, span, div, button, input, textarea, select, label, a {
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet and larger */
+@media (min-width: 641px) and (max-width: 1023px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px;
   }
 }

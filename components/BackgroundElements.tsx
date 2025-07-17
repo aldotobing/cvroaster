@@ -1,31 +1,44 @@
-"use client";
-
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-const floatingEmojis = ["🚀", "💼", "📊", "🎯", "💡", "📈", "🏆", "✨"];
+const floatingEmojis = ["🔥", "✨", "💎", "🚀", "⭐", "💫"];
 
-export const BackgroundElements = () => {
-  if (typeof window === 'undefined') {
-    return null; // Don't render on server
+const BackgroundElements = () => {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null;
   }
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(12)].map((_, i) => (
+      {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute text-4xl opacity-10 dark:opacity-20"
+          className="absolute text-2xl opacity-5 dark:opacity-10"
           initial={{
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
+            x:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerWidth : 0),
+            y:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerHeight : 0),
           }}
           animate={{
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
+            x:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerWidth : 0),
+            y:
+              Math.random() *
+              (typeof window !== "undefined" ? window.innerHeight : 0),
             rotate: 360,
           }}
           transition={{
-            duration: 20 + Math.random() * 20,
+            duration: 30 + Math.random() * 20,
             repeat: Infinity,
             ease: "linear",
           }}

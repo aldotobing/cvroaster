@@ -18,7 +18,22 @@ import {
   Zap,
   TrendingUp,
   Sparkles,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import ScoringGuide from "@/components/ScoringGuide";
+
+type ScoreFeedback = {
+  emoji: string;
+  title: string;
+  message: string;
+  className: string;
+  progress: string;
+  bg: string;
+  border: string;
+};
 
 // Helper function to process markdown content for better formatting
 const processMarkdownContent = (content: string): string => {
@@ -201,18 +216,54 @@ export default function ReviewResults({
   originalCvText,
 }: ReviewResultsProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 85) return { text: 'text-green-700', bg: 'bg-green-100', border: 'border-green-200', fill: 'text-green-500' };
+    if (score >= 70) return { text: 'text-blue-700', bg: 'bg-blue-100', border: 'border-blue-200', fill: 'text-blue-500' };
+    if (score >= 50) return { text: 'text-amber-700', bg: 'bg-amber-100', border: 'border-amber-200', fill: 'text-amber-500' };
+    return { text: 'text-red-700', bg: 'bg-red-100', border: 'border-red-200', fill: 'text-red-500' };
+  };
+  
+  const getScoreFeedback = (score: number): ScoreFeedback => {
+    if (score >= 85) return { 
+      emoji: '🏆', 
+      title: 'Outstanding!',
+      message: 'Your CV demonstrates exceptional alignment with the target role.',
+      className: 'from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20',
+      progress: 'bg-green-500',
+      bg: 'bg-green-100',
+      border: 'border-green-200'
+    };
+    if (score >= 70) return { 
+      emoji: '🎯', 
+      title: 'Great Job!',
+      message: 'Your CV shows strong potential with some room for refinement.',
+      className: 'from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20',
+      progress: 'bg-blue-500',
+      bg: 'bg-blue-100',
+      border: 'border-blue-200'
+    };
+    if (score >= 50) return { 
+      emoji: '👍', 
+      title: 'Good Effort!',
+      message: 'Your CV has potential but could benefit from some improvements.',
+      className: 'from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-900/20',
+      progress: 'bg-amber-500',
+      bg: 'bg-amber-100',
+      border: 'border-amber-200'
+    };
+    return { 
+      emoji: '💪', 
+      title: 'Needs Work',
+      message: 'Your CV requires significant improvements to be competitive.',
+      className: 'from-red-50 to-orange-100 dark:from-red-900/20 dark:to-orange-900/20',
+      progress: 'bg-red-500',
+      bg: 'bg-red-100',
+      border: 'border-red-200'
+    };
   };
 
-  const getScoreEmoji = (score: number) => {
-    if (score >= 90) return "🏆";
-    if (score >= 80) return "🎯";
-    if (score >= 70) return "👍";
-    if (score >= 60) return "👌";
-    return "💪";
-  };
+  const [isScoringGuideOpen, setIsScoringGuideOpen] = React.useState(false);
+
+
 
   return (
     <div className="space-y-6">
@@ -239,38 +290,99 @@ export default function ReviewResults({
         </Badge>
       </motion.div>
 
+      {/* AI Model Notice */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg"
+      >
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              Incomplete or unexpected results?
+            </h3>
+            <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+              <p>
+                The AI may occasionally provide incomplete or unexpected results. For optimal review quality, please ensure your CV content is clear and well-structured. If you encounter any issues, we recommend reviewing and resubmitting your CV.
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Score Card */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <Trophy className="w-8 h-8 text-yellow-500" />
-              <span className="text-6xl">{getScoreEmoji(review.score)}</span>
+        <Card className={`bg-gradient-to-br ${getScoreFeedback(review.score).className} border-0 shadow-sm`}>
+          <CardContent className="p-6 sm:p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="relative mb-6">
+                <div className={`absolute -inset-4 rounded-full ${getScoreFeedback(review.score).bg} opacity-30`}></div>
+                <div className={`relative flex items-center justify-center w-24 h-24 rounded-full ${getScoreFeedback(review.score).bg} ${getScoreFeedback(review.score).border} border-4`}>
+                  <span className="text-4xl">{getScoreFeedback(review.score).emoji}</span>
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                {getScoreFeedback(review.score).title}
+              </h3>
+              
+              <div className={`text-5xl font-bold mb-4 ${getScoreColor(review.score).text}`}>
+                {review.score}
+                <span className="text-2xl text-gray-500 ml-1">/ 100</span>
+              </div>
+              
+              <div className="w-full max-w-xs mb-6">
+                <div className="flex justify-between text-sm text-gray-500 mb-1">
+                  <span>0</span>
+                  <span>100</span>
+                </div>
+                <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div 
+                    className={`h-full ${getScoreFeedback(review.score).progress} rounded-full`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${review.score}%` }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                  />
+                </div>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-lg">
+                {getScoreFeedback(review.score).message}
+              </p>
+              
+              <Collapsible open={isScoringGuideOpen} onOpenChange={setIsScoringGuideOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`${getScoreColor(review.score).text} hover:bg-opacity-20 hover:${getScoreColor(review.score).bg} transition-colors`}
+                  >
+                    {isScoringGuideOpen ? (
+                      <span className="flex items-center gap-1">
+                        Hide Scoring Details <ChevronUp className="w-4 h-4 ml-1" />
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        How is this score calculated? <ChevronDown className="w-4 h-4 ml-1" />
+                      </span>
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-6 w-full">
+                  <ScoringGuide className="bg-white bg-opacity-60 dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm" />
+                </CollapsibleContent>
+              </Collapsible>
             </div>
-            <h3 className="text-2xl font-bold mb-2">Overall Score</h3>
-            <div
-              className={`text-6xl font-bold mb-4 ${getScoreColor(
-                review.score
-              )}`}
-            >
-              {review.score}/100
-            </div>
-            <Progress
-              value={review.score}
-              className="w-full max-w-md mx-auto mb-4"
-            />
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              {review.score >= 80 && "You nailed it! 🎯"}
-              {review.score >= 60 &&
-                review.score < 80 &&
-                "Pretty solid work! 👍"}
-              {review.score < 60 &&
-                "Room for improvement, but you've got this! 💪"}
-            </p>
           </CardContent>
         </Card>
       </motion.div>
@@ -645,7 +757,7 @@ export default function ReviewResults({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="text-center py-8"
+        className="text-center pt-4 pb-8"
       >
         <p className="text-gray-500 dark:text-gray-400 text-lg">
           Remember: Every rejection is just redirection to something better! 🌟
