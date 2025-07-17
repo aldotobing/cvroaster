@@ -1,4 +1,5 @@
 import mammoth from "mammoth";
+import { createWorker } from 'tesseract.js';
 
 // Import PDF.js with types
 declare const pdfjsLib: any;
@@ -27,8 +28,10 @@ export async function parseFile(file: File): Promise<string> {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
     return await parseDOCX(file);
+  } else if (fileType.startsWith("image/")) {
+    return await parseImage(file);
   } else {
-    throw new Error("Unsupported file type. Please upload a PDF or DOCX file.");
+    throw new Error("Unsupported file type. Please upload a PDF, DOCX, or image file.");
   }
 }
 
@@ -111,17 +114,26 @@ async function parseDOCX(file: File): Promise<string> {
   }
 }
 
-function cleanText(text: string): string {
-  const cleaned = text
-    .replace(/\s+/g, " ") // Replace multiple spaces with single space
-    .replace(/\n\s*\n/g, "\n") // Remove empty lines
-    .trim();
-
-  if (!cleaned) {
-    throw new Error(
-      "No text content found in the file. Please make sure the file is not empty or corrupted."
-    );
+async function parseImage(file: File): Promise<string> {
+  try {
+    const worker = await createWorker();
+    
+    try {
+      // Use the correct Tesseract.js API
+      const { data: { text } } = await worker.recognize(file);
+      return cleanText(text);
+    } finally {
+      await worker.terminate();
+    }
+  } catch (error) {
+    console.error("Image OCR error:", error);
+    throw new Error("Failed to process image. Please make sure the image is clear and readable.");
   }
+}
 
-  return cleaned;
+function cleanText(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

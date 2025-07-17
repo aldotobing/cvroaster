@@ -85,6 +85,8 @@ export default function CVReviewer() {
     }
   }, []);
 
+  const [showImageWarning, setShowImageWarning] = useState(false);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -92,15 +94,24 @@ export default function CVReviewer() {
         setError("File size must be under 5MB");
         return;
       }
-      if (
-        ![
-          "application/pdf",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ].includes(selectedFile.type)
-      ) {
-        setError("Please upload a PDF or DOCX file");
+      
+      const validFileTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ];
+      
+      if (!validFileTypes.includes(selectedFile.type)) {
+        setError("Please upload a PDF, DOCX, JPG, or PNG file");
         return;
       }
+      
+      // Check if the selected file is an image
+      const isImage = selectedFile.type.startsWith('image/');
+      setShowImageWarning(isImage);
+      
       setFile(selectedFile);
       setError(null);
       setShowConfetti(true);
@@ -218,6 +229,7 @@ export default function CVReviewer() {
               setJobRole={setJobRole}
               inputRef={inputRef as React.RefObject<HTMLInputElement>}
               currentQuote={currentQuote}
+              showImageWarning={showImageWarning}
             />
           ) : (
             <ReviewSection
