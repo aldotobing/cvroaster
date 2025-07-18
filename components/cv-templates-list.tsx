@@ -26,6 +26,13 @@ const templates = [
     description: "Ideal for marketing, design, and creative professionals",
     icon: <User className="w-5 h-5 text-indigo-500" />
   },
+  {
+    name: "Finance & Accounting",
+    format: "DOCX",
+    file: "/cv-templates/ats-friendly-template-finance.docx",
+    description: "Ideal for finance and accounting professionals",
+    icon: <User className="w-5 h-5 text-indigo-500" />
+  },
 ];
 
 export default function CVTemplatesList() {
@@ -38,18 +45,18 @@ export default function CVTemplatesList() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Card className="overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+      <Card className="overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
         <CardHeader 
-          className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/20 cursor-pointer"
+          className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-gray-700 dark:to-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-700"
           onClick={() => setExpanded(!expanded)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white dark:bg-indigo-900/50 rounded-lg shadow-sm">
+              <div className="p-2 bg-white dark:bg-gray-600/30 rounded-lg shadow-sm">
                 <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Free CV Templates</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Free CV Templates</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Download professional templates to get started</p>
               </div>
             </div>
@@ -80,11 +87,11 @@ export default function CVTemplatesList() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="group relative h-full flex flex-col border rounded-lg hover:border-indigo-300 dark:border-gray-700 dark:hover:border-indigo-600 transition-colors overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md"
+                      className="group relative h-full flex flex-col border rounded-lg border-gray-200 hover:border-indigo-300 dark:border-gray-700 dark:hover:border-indigo-500 transition-colors overflow-hidden bg-white dark:bg-gray-800/90 shadow-sm hover:shadow-md"
                     >
                       <div className="p-4 flex-1 flex flex-col">
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg flex-shrink-0">
+                          <div className="p-2 bg-indigo-50 dark:bg-gray-700 rounded-lg flex-shrink-0">
                             {tpl.icon}
                           </div>
                           <div className="min-w-0">
@@ -93,7 +100,7 @@ export default function CVTemplatesList() {
                                 {tpl.name}
                               </h4>
                               {tpl.badge && (
-                                <span className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 rounded-full whitespace-nowrap">
+                                <span className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/70 dark:text-emerald-200 rounded-full whitespace-nowrap">
                                   {tpl.badge}
                                 </span>
                               )}
@@ -105,13 +112,13 @@ export default function CVTemplatesList() {
                         </div>
                         
                         <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                          <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
+                          <span className="text-xs font-mono text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">
                             {tpl.format}
                           </span>
                           <a
                             href={tpl.file}
                             download
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors px-2 py-1 -mr-2 -mb-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors px-2 py-1 -mr-2 -mb-1 rounded hover:bg-indigo-50 dark:hover:bg-gray-700"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Download className="w-4 h-4 flex-shrink-0" />
@@ -123,7 +130,7 @@ export default function CVTemplatesList() {
                   ))}
                 </div>
                 
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-900/50">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">
                       <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,8 +138,8 @@ export default function CVTemplatesList() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Tip:</strong> Download a template, fill in your details, then upload it back to get personalized feedback on your CV.
+                      <p className="text-sm text-blue-800 dark:text-blue-100">
+                        <strong className="font-semibold">Tip:</strong> Download a template, fill in your details, then upload it back to get personalized feedback on your CV.
                       </p>
                     </div>
                   </div>

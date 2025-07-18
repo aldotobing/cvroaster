@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 
 // Simple debounce utility function
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
@@ -88,12 +88,14 @@ export function Turnstile({
       widgetContainerRef.current.style.opacity = '1';
     }
 
-    // Always use normal size for desktop
+    // Use compact size on mobile, normal on desktop
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640; // Tailwind's sm breakpoint
+  const turnstileSize = isMobile ? 'compact' : 'normal';
     
     try {
       const id = window.turnstile.render(widgetContainerRef.current, {
         sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-        size: 'normal',
+        size: turnstileSize,
         theme: 'light',
         language: 'en',
         callback: (token: string) => {
@@ -142,25 +144,44 @@ export function Turnstile({
     }
   }, [onVerify, onError, onExpire]);
 
+  // Track window size for responsive behavior
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+  });
+
   // Handle window resize to adjust widget size
   useEffect(() => {
     const handleResize = () => {
-      // Only re-render if needed
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+      
+      // Only re-render if the size crosses the mobile breakpoint
       if (widgetId.current && window.turnstile) {
-        window.turnstile.remove(widgetId.current);
-        widgetId.current = null;
-        hasRendered.current = false;
-        renderTurnstile();
+        const isMobileNow = window.innerWidth < 640;
+        const wasMobile = windowSize.width < 640;
+        
+        if (isMobileNow !== wasMobile) {
+          window.turnstile.remove(widgetId.current);
+          widgetId.current = null;
+          hasRendered.current = false;
+          renderTurnstile();
+        }
       }
     };
 
     const debouncedResize = debounce(handleResize, 250);
     window.addEventListener('resize', debouncedResize);
+    
+    // Initial check on mount
+    handleResize();
 
     return () => {
       window.removeEventListener('resize', debouncedResize);
     };
-  }, [renderTurnstile]);
+  }, [renderTurnstile, windowSize.width]);
 
   // Load the Turnstile script only once
   useEffect(() => {
@@ -205,13 +226,13 @@ export function Turnstile({
   if (isVerified) {
     return (
       <div className={`turnstile-container ${className}`}>
-        <div className="w-full flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-          <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="w-full flex flex-col items-center justify-center p-2">
+          <div className="w-6 h-6 flex items-center justify-center mb-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-green-700 dark:text-green-300">Verified</p>
+          <p className="text-xs font-medium text-green-600 dark:text-green-400">Verified</p>
         </div>
       </div>
     );
@@ -260,16 +281,17 @@ export function Turnstile({
         <div 
           style={{
             position: 'absolute',
-            width: '320px',
-            height: '78px',
+            width: '100%',
+            height: '100%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'opacity 0.2s ease-in-out',
-            zIndex: 10
+            zIndex: 10,
+            background: 'transparent'
           }}
         >
-          <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md w-full h-full"></div>
+          <div className="animate-pulse w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-transparent"></div>
         </div>
       )}
     </div>

@@ -309,7 +309,7 @@ export default function ReviewResults({
             </h3>
             <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
               <p>
-                The AI may occasionally provide incomplete or unexpected results. For optimal review quality, please ensure your CV content is clear and well-structured. If you encounter any issues, we recommend reviewing and resubmitting your CV.
+                The AI may occasionally provide incomplete or unexpected results. If you encounter any issues, we recommend reviewing and resubmitting your CV.
               </p>
             </div>
           </div>
