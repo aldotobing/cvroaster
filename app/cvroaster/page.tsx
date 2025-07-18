@@ -20,7 +20,7 @@ const motivationalQuotes = [
   "Every expert was once a beginner. Polish that CV! 💎",
   "Your skills deserve to shine brighter! 🌟",
   "Let's turn your CV from good to absolutely fire! 🔥",
-  "Time to make your CV as impressive as you are! 💪"
+  "Time to make your CV as impressive as you are! 💪",
 ];
 
 export default function CVReviewer() {
@@ -38,22 +38,7 @@ export default function CVReviewer() {
   const [language, setLanguage] = useState<"english" | "indonesian">("english");
   const [showConfetti, setShowConfetti] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  // Check localStorage only after component mounts on the client side
-  useEffect(() => {
-    setIsClient(true);
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
-    if (hasSeenWelcome !== 'true') {
-      setShowWelcome(true);
-    }
-  }, []);
-
-  const handleStart = useCallback(() => {
-    setShowWelcome(false);
-    localStorage.setItem('hasSeenWelcome', 'true');
-  }, []);
+  const [showWelcome, setShowWelcome] = useState(true);
   
   // Refs
   const inputRef = useRef<HTMLInputElement>(null);
@@ -219,14 +204,6 @@ export default function CVReviewer() {
 
       <BackgroundElements />
       <Confetti showConfetti={showConfetti} isDarkMode={isDarkMode} />
-
-      {isClient && (
-        <AnimatePresence>
-          {showWelcome && (
-            <WelcomeScreen onStart={handleStart} />
-          )}
-        </AnimatePresence>
-      )}
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
         <Header 
