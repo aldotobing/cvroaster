@@ -168,13 +168,22 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                       }`}
                     >
                       {file.type.includes('pdf') ? (
-                        <FileText className="w-10 h-10 text-red-500 dark:text-red-400" strokeWidth={1.5} />
+                        <div className="relative">
+                          <FileText className="w-10 h-10 text-red-500 dark:text-red-400" strokeWidth={1.5} />
+                          <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-red-500 dark:bg-red-600 rounded px-1">PDF</span>
+                        </div>
                       ) : file.type.startsWith('image/') ? (
-                        <svg className="w-10 h-10 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                      ) : file.type.includes('word') || file.name.toLowerCase().endsWith('.docx') ? (
-                        <FileText className="w-10 h-10 text-blue-500 dark:text-blue-400" strokeWidth={1.5} />
+                        <div className="relative">
+                          <svg className="w-10 h-10 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                          <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-green-500 dark:bg-green-600 rounded px-1">IMG</span>
+                        </div>
+                      ) : file.type.includes('word') || file.type.endsWith('vnd.openxmlformats-officedocument.wordprocessingml.document') || file.name.toLowerCase().endsWith('.docx') ? (
+                        <div className="relative">
+                          <FileText className="w-10 h-10 text-blue-500 dark:text-blue-400" strokeWidth={1.5} />
+                          <span className="absolute -top-1 -right-1 text-xs font-bold text-white bg-blue-500 dark:bg-blue-600 rounded-full w-4 h-4 flex items-center justify-center">W</span>
+                        </div>
                       ) : (
                         <File className="w-10 h-10 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
                       )}
@@ -249,9 +258,13 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                   </label>
                 )}
                 {showImageWarning && (
-                  <div className="mt-2 text-yellow-600 dark:text-yellow-400 text-xs flex justify-center items-center gap-1 text-center">
-                    <span>ℹ️</span>
-                    <span>For best results, use PDF or DOCX (images may be less accurate)</span>
+                  <div className="mt-2 px-2">
+                    <div className="inline-flex items-start max-w-full mx-auto bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-2">
+                      <Info className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <span className="ml-1.5 text-xs text-yellow-600 dark:text-yellow-400 text-left">
+                        For best results, use PDF or DOCX (images may be less accurate)
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
