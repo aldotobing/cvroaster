@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { generateCoverLetterStream } from "@/lib/cover-letter-service";
 import { CoverLetterOptions, CVReview } from "@/types/cv-review";
 
-// Handle all HTTP methods
+// Configure as an Edge API Route
 export const runtime = "edge";
-
-export const dynamic = "force-dynamic";
 
 // Handle CORS preflight request
 export async function OPTIONS() {

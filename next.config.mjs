@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
   webpack: (config) => {
     // Handle Node.js modules
@@ -55,60 +53,60 @@ const nextConfig = {
       repl: false,
       v8: false,
       inspector: false,
-      'node:fs': false,
-      'node:path': false,
-      'node:stream': false,
-      'node:zlib': false,
-      'node:http': false,
-      'node:https': false,
-      'node:crypto': false,
-      'node:os': false,
-      'node:buffer': false,
-      'node:url': false,
-      'node:querystring': false,
-      'node:util': false,
-      'node:assert': false,
-      'node:events': false,
-      'node:string_decoder': false,
-      'node:timers': false,
-      'node:process': false,
-      'node:vm': false,
-      'node:constants': false,
-      'node:module': false,
-      'node:domain': false,
-      'node:punycode': false,
-      'node:async_hooks': false,
-      'node:perf_hooks': false,
-      'node:worker_threads': false,
-      'node:wasi': false,
-      'node:readline': false,
-      'node:repl': false,
-      'node:v8': false,
-      'node:inspector': false,
-      'puppeteer-core': false,
-      'puppeteer': false
+      "node:fs": false,
+      "node:path": false,
+      "node:stream": false,
+      "node:zlib": false,
+      "node:http": false,
+      "node:https": false,
+      "node:crypto": false,
+      "node:os": false,
+      "node:buffer": false,
+      "node:url": false,
+      "node:querystring": false,
+      "node:util": false,
+      "node:assert": false,
+      "node:events": false,
+      "node:string_decoder": false,
+      "node:timers": false,
+      "node:process": false,
+      "node:vm": false,
+      "node:constants": false,
+      "node:module": false,
+      "node:domain": false,
+      "node:punycode": false,
+      "node:async_hooks": false,
+      "node:perf_hooks": false,
+      "node:worker_threads": false,
+      "node:wasi": false,
+      "node:readline": false,
+      "node:repl": false,
+      "node:v8": false,
+      "node:inspector": false,
+      "puppeteer-core": false,
+      puppeteer: false,
     };
 
     // Exclude PDF.js from being processed by Next.js
     config.module.rules.push({
       test: /\.worker\.js$/,
-      loader: 'worker-loader',
+      loader: "worker-loader",
       options: {
-        publicPath: '/_next/',
+        publicPath: "/_next/",
       },
     });
-    
+
     // Add a rule to handle PDF.js worker
     config.module.rules.push({
       test: /pdf\.worker\.js$/,
-      type: 'asset/resource',
+      type: "asset/resource",
       generator: {
-        filename: 'static/worker/[hash].worker.js',
+        filename: "static/worker/[hash].worker.js",
       },
     });
-    
+
     return config;
   },
-}
+};
 
 export default nextConfig;
