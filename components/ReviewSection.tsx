@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import GlassCard from "@/components/GlassCard";
+import { CoverLetterOptions, LetterLength, Tone } from "@/types/cv-review";
 import ReviewResults from "@/components/review-results";
 import CoverLetterSection from "@/components/CoverLetterSection";
 import {
@@ -298,7 +299,12 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
             jobRole={jobRole}
             language={language}
             onBack={() => setShowCoverLetter(false)}
-            onGenerate={async (options) => {
+            onGenerate={async (options: CoverLetterOptions & { 
+              companyName?: string; 
+              jobDescription?: string; 
+              jobRole: string;
+              language: 'english' | 'indonesian';
+            }) => {
               try {
                 const response = await fetch("/api/generate-cover-letter", {
                   method: "POST",
@@ -313,10 +319,65 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
                 });
 
                 if (!response.ok) {
+                  const errorData = await response.text();
+                  console.error('API Error:', errorData);
                   throw new Error("Failed to generate cover letter");
                 }
 
-                return await response.json();
+                if (!response.body) {
+                  throw new Error("No response body received");
+                }
+
+                // Handle the streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  
+                  const chunk = decoder.decode(value, { stream: true });
+                  const lines = chunk.split('\n\n').filter(line => line.trim() !== '');
+                  
+                  for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                      const data = line.replace(/^data: /, '');
+                      if (data === '[DONE]') continue;
+                      
+                      try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.chunk) {
+                          result += parsed.chunk;
+                        }
+                      } catch (e) {
+                        console.error('Error parsing chunk:', e);
+                      }
+                    }
+                  }
+                }
+
+                // Return a properly formatted CoverLetter object
+                return {
+                  content: result,
+                  options: {
+                    tone: options.tone || 'professional',
+                    length: options.length || 'medium',
+                    highlightSkills: options.highlightSkills ?? true,
+                    includePersonalTouch: options.includePersonalTouch ?? true,
+                    customInstructions: options.customInstructions || '',
+                    language: options.language || 'english'
+                  },
+                  generatedAt: new Date().toISOString(),
+                  jobRole: options.jobRole || jobRole,
+                  companyName: options.companyName,
+                  jobDescription: options.jobDescription,
+                  formattedDate: new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })
+                };
               } catch (error) {
                 console.error("Error generating cover letter:", error);
                 toast({
