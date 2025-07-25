@@ -120,9 +120,19 @@ export default function CoverLetterSection({
         }),
       });
 
+      // Check for HTTP errors before processing the response
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          error: `HTTP error! status: ${response.status} ${response.statusText}`
+        }));
+        
+        const error = new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        (error as any).status = response.status;
+        throw error;
+      }
+
       if (!response.body) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to generate cover letter");
+        throw new Error("No response body received from the server");
       }
 
       const reader = response.body.getReader();
