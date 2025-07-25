@@ -296,10 +296,10 @@ Please wait a moment before trying again.`;
             message: formatRateLimitMessage(60000),
             canRetry: false, // Disable retry until countdown finishes
             // actionText: "I'll wait",
-            action: () => {
-              setError(null);
-              setIsGenerating(false);
-            }
+            // action: () => {
+            //   setError(null);
+            //   setIsGenerating(false);
+            // }
           });
           break;
           
