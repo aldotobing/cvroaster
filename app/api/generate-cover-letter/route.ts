@@ -2,7 +2,24 @@ import { NextResponse } from 'next/server';
 import { generateCoverLetterStream } from '@/lib/cover-letter-service';
 import { CoverLetterOptions, CVReview } from '@/types/cv-review';
 
+// Handle CORS preflight request
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 export async function POST(request: Request) {
+  // Handle CORS
+  const headers = new Headers();
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
     const { 
       cvText, 
@@ -109,13 +126,16 @@ export async function POST(request: Request) {
         }
       });
 
-      return new Response(sseStream, {
+      const response = new Response(sseStream, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
+          ...Object.fromEntries(headers)
         },
       });
+      
+      return withCorsHeaders(response);
     } catch (error) {
       console.error('Error in generate-cover-letter API:', error);
       // Return a stream with the error message
@@ -133,19 +153,46 @@ export async function POST(request: Request) {
         },
       });
 
-      return new Response(errorStream, {
+      const response = new Response(errorStream, {
+        status: 500,
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
+          ...Object.fromEntries(headers)
         },
       });
+      
+      return withCorsHeaders(response);
     }
   } catch (error) {
     console.error('Error in cover letter generation endpoint:', error);
-    return NextResponse.json(
-      { error: 'Failed to process cover letter request' },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to process cover letter request',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...Object.fromEntries(headers)
+        }
+      }
     );
   }
+}
+
+// Add CORS headers to all responses
+function withCorsHeaders(response: Response): Response {
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set('Access-Control-Allow-Origin', '*');
+  newHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
 }
