@@ -105,7 +105,7 @@ export default function CoverLetterSection({
     
     return `⏳ You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly!
 
-⏱️  Time remaining: ${formatTime(timeLeft)} seconds
+⏱️  Time remaining: ${formatTime(timeLeft)} seconds. 
 
 Please wait a moment before trying again.`;
   };
