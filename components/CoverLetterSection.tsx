@@ -295,7 +295,7 @@ Please wait a moment before trying again.`;
             title: "Oops! Too Many Requests :(",
             message: formatRateLimitMessage(60000),
             canRetry: false, // Disable retry until countdown finishes
-            actionText: "I'll wait",
+            // actionText: "I'll wait",
             action: () => {
               setError(null);
               setIsGenerating(false);
