@@ -108,8 +108,28 @@ async function parseDOCX(file: File): Promise<string> {
     return cleanText(result.value);
   } catch (error) {
     console.error("DOCX parsing error:", error);
+    
+    // Handle specific ZIP-related errors
+    if (error instanceof Error && 
+        (error.message.includes('zip') || 
+         error.message.includes('end of central directory') ||
+         error.message.includes('corrupt') ||
+         error.message.toLowerCase().includes('invalid file'))) {
+      throw new Error(
+        "The file doesn't appear to be a valid DOCX file. " +
+        "This can happen if the file is corrupted or was saved with an incorrect extension. " +
+        "Please try these steps:\n\n" +
+        "1. Open the file in Microsoft Word or a compatible word processor\n" +
+        "2. Go to 'File' > 'Save As'\n" +
+        "3. Choose 'Word Document (*.docx)' as the file type\n" +
+        "4. Save the file and upload it again"
+      );
+    }
+    
+    // Generic error for other cases
     throw new Error(
-      "Failed to parse DOCX. Please make sure the file is not corrupted."
+      "We couldn't process your DOCX file. The file might be corrupted or in an unsupported format. " +
+      "Please try converting it to PDF or contact support if the issue persists."
     );
   }
 }

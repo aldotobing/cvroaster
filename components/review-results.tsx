@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { CVReview } from "@/types/cv-review";
+import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import {
   Trophy,
   Heart,
@@ -20,6 +21,8 @@ import {
   Sparkles,
   ChevronUp,
   ChevronDown,
+  Check,
+  FileText,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
@@ -216,10 +219,38 @@ export default function ReviewResults({
   originalCvText,
 }: ReviewResultsProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 85) return { text: 'text-green-700', bg: 'bg-green-100', border: 'border-green-200', fill: 'text-green-500' };
-    if (score >= 70) return { text: 'text-blue-700', bg: 'bg-blue-100', border: 'border-blue-200', fill: 'text-blue-500' };
-    if (score >= 50) return { text: 'text-amber-700', bg: 'bg-amber-100', border: 'border-amber-200', fill: 'text-amber-500' };
-    return { text: 'text-red-700', bg: 'bg-red-100', border: 'border-red-200', fill: 'text-red-500' };
+    if (score >= 85) return { 
+      text: 'text-green-700', 
+      bg: 'bg-green-100', 
+      border: 'border-green-200', 
+      fill: 'text-green-500',
+      chart: '#10B981', // green-500
+      chartBg: '#ECFDF5' // green-100
+    };
+    if (score >= 70) return { 
+      text: 'text-blue-700', 
+      bg: 'bg-blue-100', 
+      border: 'border-blue-200', 
+      fill: 'text-blue-500',
+      chart: '#3B82F6', // blue-500
+      chartBg: '#EFF6FF' // blue-100
+    };
+    if (score >= 50) return { 
+      text: 'text-amber-700', 
+      bg: 'bg-amber-100', 
+      border: 'border-amber-200', 
+      fill: 'text-amber-500',
+      chart: '#F59E0B', // amber-500
+      chartBg: '#FFFBEB' // amber-100
+    };
+    return { 
+      text: 'text-red-700', 
+      bg: 'bg-red-100', 
+      border: 'border-red-200', 
+      fill: 'text-red-500',
+      chart: '#EF4444', // red-500
+      chartBg: '#FEF2F2' // red-100
+    };
   };
   
   const getScoreFeedback = (score: number): ScoreFeedback => {
@@ -290,31 +321,41 @@ export default function ReviewResults({
         </Badge>
       </motion.div>
 
-      {/* AI Model Notice */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg"
-      >
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              Incomplete or unexpected results?
-            </h3>
-            <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-              <p>
-                The AI may occasionally provide incomplete or unexpected results. If you encounter any issues, we recommend reviewing and resubmitting your CV.
-              </p>
+      {/* Error Notice - Only shown when there's an error or empty response */}
+      {(review.error || !review || Object.keys(review).length === 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 mb-6 rounded-r-lg"
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                {review?.error ? 'Error Processing Your CV' : 'Incomplete Results Received'}
+              </h3>
+              <div className="mt-1 text-sm text-red-700 dark:text-red-300">
+                <p>
+                  {review?.error || 'We encountered an issue processing your CV. The results may be incomplete.'}
+                </p>
+                <p className="mt-2">
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="font-medium underline hover:text-red-900 dark:hover:text-red-100"
+                  >
+                    Click here to try again
+                  </button>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Score Card */}
       <motion.div
@@ -322,68 +363,115 @@ export default function ReviewResults({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <Card className={`bg-gradient-to-br ${getScoreFeedback(review.score).className} border-0 shadow-sm`}>
-          <CardContent className="p-6 sm:p-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="relative mb-6">
-                <div className={`absolute -inset-4 rounded-full ${getScoreFeedback(review.score).bg} opacity-30`}></div>
-                <div className={`relative flex items-center justify-center w-24 h-24 rounded-full ${getScoreFeedback(review.score).bg} ${getScoreFeedback(review.score).border} border-4`}>
-                  <span className="text-4xl">{getScoreFeedback(review.score).emoji}</span>
+        <Card className="bg-white dark:bg-gray-900 border-0 shadow-sm overflow-hidden">
+          <div className="relative">
+            <div className={`absolute inset-0 ${getScoreFeedback(review.score).bg} opacity-10`}></div>
+            <CardContent className="relative p-6 sm:p-8">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* Left Column - Radial Chart */}
+                <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col items-center">
+                  <div className="relative w-48 h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart 
+                        innerRadius="80%" 
+                        outerRadius="100%"
+                        barSize={10}
+                        data={[{
+                          name: 'score',
+                          value: review.score,
+                          fill: getScoreColor(review.score).chart,
+                          background: getScoreColor(review.score).chartBg
+                        }]}
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        <PolarAngleAxis 
+                          type="number" 
+                          domain={[0, 100]} 
+                          angleAxisId={0} 
+                          tick={false}
+                        />
+                        <RadialBar
+                          dataKey="value"
+                          cornerRadius={5}
+                          className="animate-in fade-in duration-1000"
+                          background={{ fill: getScoreColor(review.score).chartBg }}
+                        />
+                        <text
+                          x="50%"
+                          y="50%"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className={`text-4xl font-bold ${getScoreColor(review.score).text}`}
+                        >
+                          {review.score}
+                        </text>
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="text-center mt-2 text-sm text-gray-500">
+                      out of 100
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right Column - Score Details */}
+                <div className="w-full md:w-2/3 lg:w-3/4 text-center md:text-left">
+                  <div className="flex flex-col items-center md:items-start mb-4">
+                    <span className={`text-5xl mb-2 ${getScoreColor(review.score).text}`}>
+                      {getScoreFeedback(review.score).emoji}
+                    </span>
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                      {getScoreFeedback(review.score).title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-lg">
+                      {getScoreFeedback(review.score).message}
+                    </p>
+                  </div>
+                  
+                  <div className="w-full max-w-md mx-auto md:mx-0">
+                    <div className="flex justify-between text-sm text-gray-500 mb-1">
+                      <span>0</span>
+                      <span>100</span>
+                    </div>
+                    <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${getScoreFeedback(review.score).progress} rounded-full transition-all duration-1000`}
+                        style={{ width: `${review.score}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Needs Work</span>
+                      <span>Perfect Match</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 text-sm text-gray-600 dark:text-gray-300">
+                    <p className="mb-2">
+                      <span className="font-medium">How is this score calculated?</span> We analyze your CV against the job description and industry standards.
+                    </p>
+                    <p>
+                      <button 
+                        onClick={() => setIsScoringGuideOpen(!isScoringGuideOpen)}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+                                   bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300
+                                   focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-700"
+                        aria-expanded={isScoringGuideOpen}
+                      >
+                        <FileText className="w-4 h-4 mr-2" /> 
+                        {isScoringGuideOpen ? 'Hide' : 'View'} detailed scoring guide
+                        <ChevronDown className={`ml-2 w-4 h-4 transition-transform duration-200 ${isScoringGuideOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                    </p>
+                  </div>
                 </div>
               </div>
-              
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                {getScoreFeedback(review.score).title}
-              </h3>
-              
-              <div className={`text-5xl font-bold mb-4 ${getScoreColor(review.score).text}`}>
-                {review.score}
-                <span className="text-2xl text-gray-500 ml-1">/ 100</span>
-              </div>
-              
-              <div className="w-full max-w-xs mb-6">
-                <div className="flex justify-between text-sm text-gray-500 mb-1">
-                  <span>0</span>
-                  <span>100</span>
-                </div>
-                <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div 
-                    className={`h-full ${getScoreFeedback(review.score).progress} rounded-full`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${review.score}%` }}
-                    transition={{ duration: 1, delay: 0.2 }}
-                  />
-                </div>
-              </div>
-              
-              <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-lg">
-                {getScoreFeedback(review.score).message}
-              </p>
-              
-              <Collapsible open={isScoringGuideOpen} onOpenChange={setIsScoringGuideOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className={`${getScoreColor(review.score).text} hover:bg-opacity-20 hover:${getScoreColor(review.score).bg} transition-colors`}
-                  >
-                    {isScoringGuideOpen ? (
-                      <span className="flex items-center gap-1">
-                        Hide Scoring Details <ChevronUp className="w-4 h-4 ml-1" />
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
-                        How is this score calculated? <ChevronDown className="w-4 h-4 ml-1" />
-                      </span>
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-6 w-full">
-                  <ScoringGuide className="bg-white bg-opacity-60 dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm" />
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          </CardContent>
+            </CardContent>
+          </div>
+          <Collapsible open={isScoringGuideOpen} onOpenChange={setIsScoringGuideOpen}>
+            <CollapsibleContent>
+              <ScoringGuide className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm" />
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       </motion.div>
 
@@ -722,24 +810,53 @@ export default function ReviewResults({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
+            <div className="space-y-4">
               {review.suggestions.map((suggestion, index) => (
-                <motion.li
+                <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.3 + index * 0.1 }}
-                  className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg"
+                  className="group relative"
                 >
-                  <span className="text-indigo-500 text-xl flex-shrink-0 mt-1">
-                    💡
-                  </span>
-                  <div className="text-gray-700 dark:text-gray-300">
-                    <MarkdownContent content={suggestion} />
+                  <div className="relative z-10 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700 shadow-xs hover:shadow-sm transition-shadow">
+                    <div className="space-y-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="relative group">
+                          <div className="relative px-3 py-2 -mx-2 -mt-1 bg-amber-50 dark:bg-amber-900/20 rounded-md border-l-4 border-amber-400">
+                            <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">Original Text</div>
+                            <div className="text-gray-800 dark:text-gray-200">
+                              {suggestion.from}
+                            </div>
+                            <div className="absolute -top-2 -right-2 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-medium px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-700">
+                              Before
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="relative group mt-4">
+                          <div className="px-3 py-2 -mx-2 bg-green-50 dark:bg-green-900/10 rounded-md border-l-4 border-green-400">
+                            <div className="text-xs font-medium text-green-800 dark:text-green-200 mb-1">Suggestion</div>
+                            <div className="text-gray-800 dark:text-gray-200">
+                              <MarkdownContent content={suggestion.to} />
+                            </div>
+                            <div className="absolute -top-2 -right-2 bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 p-1 rounded-full border border-green-200 dark:border-green-700">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                        {suggestion.explanation && (
+                          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Why this works better:</span> {suggestion.explanation}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </motion.li>
+                  <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 blur-sm transition-opacity -z-10"></div>
+                </motion.div>
               ))}
-            </ul>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -751,6 +868,63 @@ export default function ReviewResults({
         jobRole={jobRole}
         originalCvText={originalCvText}
       />
+
+      {/* Cover Letter Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-8"
+      >
+        <Card className="border-2 border-dashed border-blue-200 dark:border-blue-900/50 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-blue-700 dark:text-blue-300">
+              <FileText className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+              <span>Professional Cover Letter</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5"></div>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Stand out from other applicants with a personalized cover letter that highlights your unique qualifications for <span className="font-medium text-blue-700 dark:text-blue-300">{jobRole || 'this position'}</span>.
+                  </p>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5"></div>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Our AI will analyze your CV and craft a compelling narrative that aligns with the job requirements.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <Button 
+                  onClick={() => {
+                    const event = new CustomEvent('generateCoverLetter');
+                    window.dispatchEvent(event);
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Cover Letter
+                </Button>
+                
+                <p className="mt-2 text-xs text-center text-gray-500 dark:text-gray-400">
+                  Takes about 30 seconds to generate
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Fun Footer */}
       <motion.div

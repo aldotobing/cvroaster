@@ -3,11 +3,21 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Briefcase, FileText, File, Upload, Info, Sparkles, Wand2, Lock, UploadCloud } from "lucide-react";
+import { Briefcase, FileText, File, Upload, Info, Sparkles, Wand2, Lock, UploadCloud, AlertTriangle } from "lucide-react";
+import ErrorDisplay from "@/components/ErrorDisplay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import GlassCard from "@/components/GlassCard";
 import CVTemplatesList from "@/components/cv-templates-list";
 import { Turnstile } from "@/components/Turnstile";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useToast } from "@/hooks/use-toast";
 
 interface CVUploadSectionProps {
   file: File | null;
@@ -58,8 +68,40 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
   currentQuote,
   showImageWarning,
 }) => {
+  const { toast } = useToast();
+  const jobRoleRef = useRef<HTMLInputElement>(null);
+  
   const handleJobRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setJobRole(e.target.value);
+  };
+
+  const [showDialog, setShowDialog] = React.useState(false);
+
+  const handleRoastClick = () => {
+    if (!jobRole.trim()) {
+      setShowDialog(true);
+    } else {
+      setShowTurnstile(true);
+    }
+  };
+
+  const handleContinue = () => {
+    setShowDialog(false);
+    setShowTurnstile(true);
+  };
+
+  const handleCancel = () => {
+    setShowDialog(false);
+    // Focus and scroll to job role field
+    setTimeout(() => {
+      if (jobRoleRef.current) {
+        jobRoleRef.current.focus();
+        jobRoleRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 100);
   };
 
   return (
@@ -72,6 +114,39 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
       className="w-full max-w-3xl mx-auto space-y-6 md:space-y-8 px-4 sm:px-6"
     >
       <CVTemplatesList />
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="w-[95vw] max-w-[400px] mx-4 rounded-2xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-0 shadow-2xl">
+          <DialogHeader className="text-center pb-4">
+            <div className="flex flex-col items-center gap-3 mb-2">
+              <div className="w-14 h-14 bg-yellow-50 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-7 w-7 text-yellow-500 dark:text-yellow-400" />
+              </div>
+              <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                No Job Role Provided
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed px-2">
+              For better results, we recommend specifying a job role. Would you like to continue with a general CV review?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col gap-3 pt-4">
+            <Button 
+              onClick={handleContinue}
+              className="w-full h-12 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-medium rounded-xl shadow-lg transition-all duration-200 active:scale-95"
+            >
+              Continue Anyway
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleCancel}
+              className="w-full h-12 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium rounded-xl transition-all duration-200 active:scale-95"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <GlassCard className="p-4 sm:p-6 md:p-8 relative">
         <div className="space-y-6 md:space-y-8">
@@ -96,6 +171,7 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                 onChange={handleJobRoleChange}
                 placeholder="e.g., Frontend Developer, Data Scientist, Financial Analyst, Marketing Manager"
                 className="pl-10 text-sm sm:text-base h-11 sm:h-12 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-600 dark:focus:border-indigo-600"
+                ref={jobRoleRef}
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Briefcase className="h-5 w-5 text-gray-400 dark:text-gray-300" />
@@ -152,12 +228,17 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
+                {/* Hidden input for file selection - always available for "Change" button */}
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="sr-only"
+                  accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.webp"
+                  onChange={handleFileSelect}
+                  ref={inputRef}
+                />
                 {file ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center"
-                  >
+                  <div className="flex flex-col items-center">
                     <div 
                       className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 ${
                         file.type.includes('pdf')
@@ -209,7 +290,13 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => inputRef.current?.click()}
+                        onClick={(e) => {
+                          // Reset the input value to allow re-selecting the same file
+                          if (inputRef.current) {
+                            inputRef.current.value = '';
+                            inputRef.current.click();
+                          }
+                        }}
                         className="text-xs h-8 px-3 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                       >
                         Change
@@ -218,13 +305,19 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setFile(null)}
+                        onClick={() => {
+                          // Reset the input value when removing the file
+                          if (inputRef.current) {
+                            inputRef.current.value = '';
+                          }
+                          setFile(null);
+                        }}
                         className="text-xs h-8 px-3 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
                       >
                         Remove
                       </Button>
                     </div>
-                  </motion.div>
+                  </div>
                 ) : (
                   <label
                     htmlFor="file-upload"
@@ -246,15 +339,6 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                       </p>
                     </div>
                     
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.webp"
-                      onChange={handleFileSelect}
-                      ref={inputRef}
-                    />
                   </label>
                 )}
                 {showImageWarning && (
@@ -292,32 +376,24 @@ const CVUploadSection: React.FC<CVUploadSectionProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-red-500 text-sm text-center p-2 bg-red-50 dark:bg-red-900/30 rounded-md"
+                  className="w-full"
                 >
-                  {error}
+                  <ErrorDisplay message={error} className="mt-2" />
                 </motion.div>
               )}
 
               <div className="w-full flex flex-col items-center gap-4">
                 {!showTurnstile ? (
                   <Button
-                    onClick={() => setShowTurnstile(true)}
+                    onClick={handleRoastClick}
                     disabled={!file || isProcessing}
                     className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg shadow-lg transition-all duration-300 rounded-full"
                   >
                     {isProcessing ? (
                       <div className="flex items-center justify-center">
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                          className="mr-2"
-                        >
+                        <div className="mr-2">
                           <Wand2 className="w-5 h-5" />
-                        </motion.div>
+                        </div>
                         <span>Roasting your CV...</span>
                       </div>
                     ) : (

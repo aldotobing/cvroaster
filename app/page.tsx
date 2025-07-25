@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/components/ui/use-toast";
 import { parseFile } from "@/lib/file-parser";
 import { reviewCV } from "@/lib/ai-service";
 import { generatePDF } from "@/lib/pdf-generator";
@@ -11,6 +12,7 @@ import BackgroundElements from "@/components/BackgroundElements";
 import Confetti from "@/components/Confetti";
 import CVUploadSection from "@/components/CVUploadSection";
 import ReviewSection from "@/components/ReviewSection";
+import ErrorDisplay from "@/components/ErrorDisplay";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import WelcomeScreen from "@/components/WelcomeScreen";
@@ -25,13 +27,37 @@ const motivationalQuotes = [
 
 export default function CVReviewer() {
   // State management
-  const [file, setFile] = useState<File | null>(null);
+  const [file, _setFile] = useState<File | null>(null);
+  const setFile = (newFile: File | null) => {
+    // If file is being changed or removed, reset verification
+    if (!newFile || (file && newFile.name !== file.name)) {
+      setIsVerified(false);
+      setShowTurnstile(false);
+      
+      // Reset the file input value to allow re-selecting the same file
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+    _setFile(newFile);
+  };
   const [jobRole, setJobRole] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTurnstile, setShowTurnstile] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [review, setReview] = useState<CVReview | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, _setError] = useState<string | null>(null);
+  
+  // Custom error setter that also resets the Turnstile state
+  const setError = useCallback((error: string | null) => {
+    if (error) {
+      // Reset verification state when an error occurs
+      setIsVerified(false);
+      setShowTurnstile(false);
+    }
+    _setError(error);
+  }, []);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [currentQuote, setCurrentQuote] = useState("");
@@ -40,6 +66,23 @@ export default function CVReviewer() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showWelcome, setShowWelcome] = useState(false);
   const [isClient, setIsClient] = useState(false);
+
+  // Helper function to format error messages with proper line breaks and formatting
+  const formatErrorMessage = (error: unknown): string => {
+    if (!(error instanceof Error)) {
+      return "An unknown error occurred. Please try again.";
+    }
+    
+    // For DOCX parsing errors, we've already formatted them in file-parser.ts
+    if (error.message.includes('DOCX') || 
+        error.message.includes('valid DOCX file') || 
+        error.message.includes('corrupted')) {
+      return error.message;
+    }
+    
+    // For other errors, add some basic formatting
+    return error.message;
+  };
 
   // Check localStorage only after component mounts on the client side
   useEffect(() => {
@@ -84,6 +127,10 @@ export default function CVReviewer() {
     e.stopPropagation();
     setDragActive(false);
 
+    // Always reset verification state when a new file is dropped
+    setIsVerified(false);
+    setShowTurnstile(false);
+
     const files = Array.from(e.dataTransfer.files);
     const validFile = files.find(
       (file) =>
@@ -95,8 +142,6 @@ export default function CVReviewer() {
     if (validFile) {
       setFile(validFile);
       setError(null);
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
     } else {
       setError("Please upload a PDF or DOCX file under 5MB");
     }
@@ -106,6 +151,11 @@ export default function CVReviewer() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
+    
+    // Always reset verification state when a new file is selected
+    setIsVerified(false);
+    setShowTurnstile(false);
+    
     if (selectedFile) {
       if (selectedFile.size > 5 * 1024 * 1024) {
         setError("File size must be under 5MB");
@@ -131,67 +181,122 @@ export default function CVReviewer() {
       
       setFile(selectedFile);
       setError(null);
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
     }
   };
 
-  const handleReview = useCallback(() => {
-    if (!file) return;
-    setShowTurnstile(true);
-  }, [file]);
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!file) {
+      setError("Please upload a CV file");
+      return;
+    }
 
-  const handleTurnstileVerify = useCallback(
-    async (token: string) => {
-      setIsVerified(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setShowTurnstile(false);
+    if (!jobRole.trim()) {
+      setError("Please enter the job role you're applying for");
+      return;
+    }
 
-      if (!file) return;
+    setIsProcessing(true);
+    setError(null);
+    setReview(null);
 
-      setIsProcessing(true);
-      setError(null);
-
-      try {
-        const text = await parseFile(file);
-        const reviewResult = await reviewCV(text, jobRole, language);
-        setReview(reviewResult);
-
-        localStorage.setItem(
-          "lastReview",
-          JSON.stringify({
-            fileName: file.name,
-            jobRole,
-            review: reviewResult,
-            parsedText: text,
-            timestamp: Date.now(),
-          })
-        );
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Something went wrong. Try again!"
-        );
-      } finally {
-        setIsProcessing(false);
-        setIsVerified(false);
-      }
-    },
-    [file, jobRole, language]
-  );
-
+    try {
+      const text = await parseFile(file);
+      const reviewResult = await reviewCV(text, jobRole, language);
+      
+      // Store the CV text with the review for cover letter generation
+      setReview({
+        ...reviewResult,
+        cvText: text
+      });
+      
+      localStorage.setItem(
+        "lastReview",
+        JSON.stringify({
+          fileName: file.name,
+          jobRole,
+          review: reviewResult,
+          parsedText: text,
+          timestamp: Date.now(),
+        })
+      );
+      
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    } catch (err) {
+      console.error("Error processing CV:", err);
+      setError(formatErrorMessage(err));
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [file, jobRole, language]);
   const handleDownloadPDF = () => {
     if (review && file) {
       generatePDF(review, file.name, jobRole);
     }
   };
 
+  const handleTurnstileVerify = useCallback(async (token: string) => {
+    try {
+      setIsVerified(true);
+      
+      if (!file) {
+        setError("Please upload a CV file first.");
+        return;
+      }
+
+      setIsProcessing(true);
+      setError(null);
+      setReview(null);
+
+      // Use a default job role if none provided
+      const targetJobRole = jobRole.trim() || "the target position";
+
+      const text = await parseFile(file);
+      const reviewResult = await reviewCV(text, targetJobRole, language);
+      
+      // Store the CV text with the review for cover letter generation
+      setReview({
+        ...reviewResult,
+        cvText: text
+      });
+      
+      localStorage.setItem(
+        "lastReview",
+        JSON.stringify({
+          fileName: file.name,
+          jobRole: targetJobRole,
+          review: reviewResult,
+          parsedText: text,
+          timestamp: Date.now(),
+        })
+      );
+      
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    } catch (err) {
+      console.error("Error processing CV:", err);
+      setError(formatErrorMessage(err));
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [file, jobRole, language]);
+
   const resetApp = () => {
+    // Reset all states including verification
     setFile(null);
     setJobRole("");
     setReview(null);
     setError(null);
+    setShowTurnstile(false);
+    setIsVerified(false);
+    
+    // Reset file input value to allow selecting the same file again
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   if (showWelcome) {
@@ -265,6 +370,7 @@ export default function CVReviewer() {
               review={review}
               file={file}
               jobRole={jobRole}
+              language={language}
               handleDownloadPDF={handleDownloadPDF}
               resetApp={resetApp}
             />

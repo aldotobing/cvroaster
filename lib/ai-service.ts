@@ -1,32 +1,46 @@
-import type { CVReview } from "@/types/cv-review"
+import type { CVReview } from "@/types/cv-review";
 
-const AI_PROXY_ENDPOINT = process.env.NEXT_PUBLIC_AI_PROXY_ENDPOINT || 'https://deepseek-proxy.aldo-tobing.workers.dev'
+const AI_PROXY_ENDPOINT =
+  process.env.NEXT_PUBLIC_AI_PROXY_ENDPOINT ||
+  "https://deepseek-proxy.aldo-tobing.workers.dev";
 
-export async function reviewCV(cvText: string, jobRole: string, language: 'english' | 'indonesian' = 'english'): Promise<CVReview> {
-  const prompt = createPrompt(cvText, jobRole, language)
+export async function reviewCV(
+  cvText: string,
+  jobRole: string,
+  language: "english" | "indonesian" = "english"
+): Promise<CVReview> {
+  const prompt = createPrompt(cvText, jobRole, language);
 
   try {
     // Try Gemini first
-    const geminiResult = await callGeminiAPI(prompt)
-    return { ...geminiResult, provider: "Gemini" }
+    const geminiResult = await callGeminiAPI(prompt);
+    return { ...geminiResult, provider: "Gemini" };
   } catch (error) {
-    console.warn("Gemini API failed, falling back to DeepSeek:", error)
+    console.warn("Gemini API failed, falling back to DeepSeek:", error);
 
     try {
       // Fallback to DeepSeek
-      const deepseekResult = await callDeepSeekAPI(prompt)
-      return { ...deepseekResult, provider: "DeepSeek" }
+      const deepseekResult = await callDeepSeekAPI(prompt);
+      return { ...deepseekResult, provider: "DeepSeek" };
     } catch (fallbackError) {
-      throw new Error("Both AI services are currently unavailable. Please try again later.")
+      throw new Error(
+        "Both AI services are currently unavailable. Please try again later."
+      );
     }
   }
 }
 
-function createPrompt(cvText: string, jobRole: string, language: 'english' | 'indonesian' = 'english'): string {
-  const isIndonesian = language === 'indonesian';
-  const languageInstruction = isIndonesian 
-    ? 'Provide the response in proper Bahasa Indonesia.' 
-    : 'Provide the response in proper English.';
+
+
+function createPrompt(
+  cvText: string,
+  jobRole: string,
+  language: "english" | "indonesian" = "english"
+): string {
+  const isIndonesian = language === "indonesian";
+  const languageInstruction = isIndonesian
+    ? "Provide the response in proper Bahasa Indonesia."
+    : "Provide the response in proper English.";
 
   const scoringGuide = `
 SCORING GUIDE
@@ -85,7 +99,13 @@ ${scoringGuide}
   "weaknesses": ["Weakness 1", "Weakness 2", ...], 
   "structureFeedback": "Feedback about CV structure and organization",
   "grammarFeedback": "Feedback about grammar and clarity",
-  "suggestions": ["Suggestion 1", "Suggestion 2", ...], 
+  "suggestions": [
+    {
+      "from": "Original text from CV that needs improvement",
+      "to": "Improved version with explanation"
+    },
+    ...
+  ], 
   
   "atsScore": 0-100, // Score based on ATS Optimization criteria (0-100)
   "atsFeedback": "Detailed feedback about ATS compatibility",
@@ -121,78 +141,80 @@ IMPORTANT NOTES:
 5. For missingKeywords, include both technical and soft skills from the job description
 6. For trendingSkills, consider the latest industry trends for this role
 7. For dynamicContent, tailor all suggestions specifically to the target job role
-8. Ensure consistency between scores and feedback
-9. Follow the scoring guide weights for calculating the overall score
-10. Be fair and objective in your assessment`;
+8. For suggestions, always provide clear 'from' (original text from CV) and 'to' (improved version) pairs to show exactly what needs to be changed
+9. Ensure consistency between scores and feedback
+10. Follow the scoring guide weights for calculating the overall score
+`;
 }
 
-async function callGeminiAPI(prompt: string): Promise<Omit<CVReview, "provider">> {
+async function callGeminiAPI(
+  prompt: string
+): Promise<Omit<CVReview, "provider">> {
   if (!AI_PROXY_ENDPOINT) {
-    throw new Error("AI Proxy endpoint is not configured")
-  }
-
-  const response = await fetch(
-    AI_PROXY_ENDPOINT,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        model: 'gemini-2.5-flash'
-      }),
-    },
-  )
-
-  if (!response.ok) {
-    throw new Error(`AI Service error: ${response.status}`)
-  }
-
-  const data = await response.json();
-  if (!data.ok || !data.text) {
-    throw new Error('Failed to get valid response from AI service');
-  }
-
-  return parseAIResponse(data.text)
-}
-
-async function callDeepSeekAPI(prompt: string): Promise<Omit<CVReview, "provider">> {
-  if (!AI_PROXY_ENDPOINT) {
-    throw new Error("AI Proxy endpoint is not configured")
+    throw new Error("AI Proxy endpoint is not configured");
   }
 
   const response = await fetch(AI_PROXY_ENDPOINT, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       prompt: prompt,
-      model: 'deepseek-chat'
+      model: "gemini-2.5-flash",
     }),
-  })
+  });
 
   if (!response.ok) {
-    throw new Error(`DeepSeek API error: ${response.status}`)
+    throw new Error(`AI Service error: ${response.status}`);
   }
 
   const data = await response.json();
   if (!data.ok || !data.text) {
-    throw new Error('Failed to get valid response from AI service');
+    throw new Error("Failed to get valid response from AI service");
   }
-  return parseAIResponse(data.text)
+
+  return parseAIResponse(data.text);
+}
+
+async function callDeepSeekAPI(
+  prompt: string
+): Promise<Omit<CVReview, "provider">> {
+  if (!AI_PROXY_ENDPOINT) {
+    throw new Error("AI Proxy endpoint is not configured");
+  }
+
+  const response = await fetch(AI_PROXY_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: prompt,
+      model: "deepseek-chat",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`DeepSeek API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (!data.ok || !data.text) {
+    throw new Error("Failed to get valid response from AI service");
+  }
+  return parseAIResponse(data.text);
 }
 
 function parseAIResponse(text: string): Omit<CVReview, "provider"> {
   try {
     // Extract JSON from the response (in case there's extra text)
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("No JSON found in response")
+      throw new Error("No JSON found in response");
     }
 
-    const parsed = JSON.parse(jsonMatch[0])
+    const parsed = JSON.parse(jsonMatch[0]);
 
     // Validate the response structure
     if (
@@ -201,19 +223,26 @@ function parseAIResponse(text: string): Omit<CVReview, "provider"> {
       !Array.isArray(parsed.weaknesses) ||
       !Array.isArray(parsed.suggestions)
     ) {
-      throw new Error("Invalid response structure")
+      throw new Error("Invalid response structure");
     }
 
     // Base response with fallbacks
-    const response: Omit<CVReview, 'provider'> = {
+    const response: Omit<CVReview, "provider"> = {
       score: Math.max(0, Math.min(100, parsed.score)),
       strengths: parsed.strengths?.slice(0, 5) || [],
       weaknesses: parsed.weaknesses?.slice(0, 5) || [],
-      structureFeedback: parsed.structureFeedback || "No specific feedback provided.",
-      grammarFeedback: parsed.grammarFeedback || "No specific feedback provided.",
+      structureFeedback:
+        parsed.structureFeedback || "No specific feedback provided.",
+      grammarFeedback:
+        parsed.grammarFeedback || "No specific feedback provided.",
       atsScore: Math.max(0, Math.min(100, parsed.atsScore || 50)),
       atsFeedback: parsed.atsFeedback || "No specific ATS feedback provided.",
-      suggestions: parsed.suggestions?.slice(0, 7) || [],
+      suggestions: Array.isArray(parsed.suggestions) 
+        ? parsed.suggestions.map((suggestion: { from?: string; to?: string }) => ({
+            from: suggestion.from || 'No original text provided',
+            to: suggestion.to || 'No suggestion provided'
+          })).slice(0, 7)
+        : [],
     };
 
     // Add enhanced feedback sections if available
@@ -221,18 +250,26 @@ function parseAIResponse(text: string): Omit<CVReview, "provider"> {
       response.skillGapAnalysis = {
         missingSkills: parsed.skillGapAnalysis.missingSkills || [],
         trendingSkills: parsed.skillGapAnalysis.trendingSkills || [],
-        skillMatchScore: Math.max(0, Math.min(100, parsed.skillGapAnalysis.skillMatchScore || 0)),
-        recommendations: parsed.skillGapAnalysis.recommendations || []
+        skillMatchScore: Math.max(
+          0,
+          Math.min(100, parsed.skillGapAnalysis.skillMatchScore || 0)
+        ),
+        recommendations: parsed.skillGapAnalysis.recommendations || [],
       };
     }
 
     if (parsed.atsOptimization) {
       response.atsOptimization = {
-        compatibilityScore: Math.max(0, Math.min(100, parsed.atsOptimization.compatibilityScore || 0)),
+        compatibilityScore: Math.max(
+          0,
+          Math.min(100, parsed.atsOptimization.compatibilityScore || 0)
+        ),
         missingKeywords: parsed.atsOptimization.missingKeywords || [],
-        contentOptimization: parsed.atsOptimization.contentOptimization || "No specific content optimization suggestions.",
+        contentOptimization:
+          parsed.atsOptimization.contentOptimization ||
+          "No specific content optimization suggestions.",
         formattingTips: parsed.atsOptimization.formattingTips || [],
-        atsFriendlyFormat: parsed.atsOptimization.atsFriendlyFormat || false
+        atsFriendlyFormat: parsed.atsOptimization.atsFriendlyFormat || false,
       };
     }
 
@@ -241,7 +278,7 @@ function parseAIResponse(text: string): Omit<CVReview, "provider"> {
         professionalSummary: parsed.dynamicContent.professionalSummary || "",
         keyAchievements: parsed.dynamicContent.keyAchievements || [],
         skillsSection: parsed.dynamicContent.skillsSection || "",
-        tailoredExperience: parsed.dynamicContent.tailoredExperience || []
+        tailoredExperience: parsed.dynamicContent.tailoredExperience || [],
       };
     }
 
@@ -256,27 +293,33 @@ function parseAIResponse(text: string): Omit<CVReview, "provider"> {
       grammarFeedback: "Please try again for detailed feedback.",
       atsScore: 60,
       atsFeedback: "Please try again for detailed ATS analysis.",
-      suggestions: ["Try uploading your CV again for detailed suggestions"],
+      suggestions: [{
+        from: "CV content could not be processed",
+        to: "Please try uploading your CV again for detailed suggestions"
+      }],
       // Include empty enhanced feedback sections
       skillGapAnalysis: {
         missingSkills: [],
         trendingSkills: [],
         skillMatchScore: 0,
-        recommendations: ["Skill gap analysis will be available after processing"]
+        recommendations: [
+          "Skill gap analysis will be available after processing",
+        ],
       },
       atsOptimization: {
         compatibilityScore: 0,
         missingKeywords: [],
-        contentOptimization: "ATS optimization details will be available after processing",
+        contentOptimization:
+          "ATS optimization details will be available after processing",
         formattingTips: [],
-        atsFriendlyFormat: false
+        atsFriendlyFormat: false,
       },
       dynamicContent: {
         professionalSummary: "",
         keyAchievements: [],
         skillsSection: "",
-        tailoredExperience: []
-      }
-    }
+        tailoredExperience: [],
+      },
+    };
   }
 }

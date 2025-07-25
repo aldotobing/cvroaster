@@ -160,7 +160,8 @@ export function generatePDF(
   // Suggestions Section
   addSectionTitle("Improvement Suggestions", "", "#fbbf24");
   review.suggestions.forEach((suggestion) => {
-    addText(suggestion, 12, false, [180, 140, 30], true);
+    const suggestionText = `From: "${suggestion.from}" To: "${suggestion.to}" ${suggestion.explanation ? `- ${suggestion.explanation}` : ''}`;
+    addText(suggestionText, 12, false, [180, 140, 30], true);
   });
 
   // Footer

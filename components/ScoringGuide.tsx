@@ -112,34 +112,34 @@ const ScoringGuide: React.FC<ScoringGuideProps> = ({ className = '' }) => {
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 text-left">Scoring Methodology</h2>
-        <p className="mt-1 text-gray-600 text-left">
-          Understand how your CV is evaluated across key dimensions to better tailor your application.
+    <div className={`${className} max-h-[80vh] overflow-y-auto`}>
+      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white text-left">Scoring Methodology</h2>
+        <p className="mt-1 text-sm sm:text-base text-gray-600 dark:text-gray-300 text-left">
+          How your CV is evaluated across key dimensions
         </p>
       </div>
       
       <div className="divide-y divide-gray-100">
         {SCORING_CRITERIA.map((criteria, index) => (
-          <div key={index} className="p-6 hover:bg-gray-50 transition-colors text-left">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+          <div key={index} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors text-left">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-3">
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-gray-900 m-0 p-0">{criteria.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{criteria.description}</p>
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 m-0 p-0">{criteria.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">{criteria.description}</p>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {criteria.weight}% of total score
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2 sm:mt-0 self-start">
+                {criteria.weight}% weight
               </span>
             </div>
             
-            <div className="space-y-2.5 mt-4 pl-0 text-left">
+            <div className="space-y-2 mt-3 sm:mt-4 pl-0 text-left">
               {Object.entries(criteria.scoringScale).map(([key, value]) => (
-                <div key={key} className="flex items-start">
-                  <span className={`inline-flex items-center justify-center w-16 text-sm font-medium px-2.5 py-1 rounded border ${getScoreColor(value.min)}`}>
+                <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+                  <span className={`inline-flex items-center justify-center w-14 sm:w-16 text-xs sm:text-sm font-medium px-2 py-1 rounded border ${getScoreColor(value.min)}`}>
                     {value.min}+{value.min === 0 ? '' : ''}
                   </span>
-                  <span className="ml-3 text-sm text-gray-700">{value.description}</span>
+                  <span className="text-[11px] sm:text-sm text-gray-700 leading-snug">{value.description}</span>
                 </div>
               ))}
             </div>
@@ -147,11 +147,11 @@ const ScoringGuide: React.FC<ScoringGuideProps> = ({ className = '' }) => {
         ))}
       </div>
       
-      <div className="bg-blue-50/50 border-t border-blue-100 p-5 text-left">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2">How Your Score is Calculated</h3>
-        <p className="text-sm text-blue-700">
-          Each criterion is scored individually (0-100), then weighted according to its importance. 
-          The final score is the sum of all weighted scores, providing a comprehensive evaluation of your CV's effectiveness.
+      <div className="bg-blue-50/50 border-t border-blue-100 p-4 sm:p-5 text-left">
+        <h3 className="text-xs sm:text-sm font-semibold text-blue-800 mb-1.5">How Your Score is Calculated</h3>
+        <p className="text-xs sm:text-sm text-blue-700 leading-relaxed">
+          Each criterion is scored (0-100), then weighted by importance. 
+          The final score is the sum of all weighted scores.
         </p>
       </div>
     </div>

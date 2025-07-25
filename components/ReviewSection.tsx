@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import GlassCard from "@/components/GlassCard";
 import ReviewResults from "@/components/review-results";
+import CoverLetterSection from "@/components/CoverLetterSection";
 import {
   Rocket,
   Download,
@@ -13,12 +14,14 @@ import {
   Clipboard,
   Check,
   Loader2,
+  FileText,
 } from "lucide-react";
 
 interface ReviewSectionProps {
   review: any;
   file: File | null;
   jobRole: string;
+  language: "english" | "indonesian";
   handleDownloadPDF: () => void;
   resetApp: () => void;
 }
@@ -27,6 +30,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
   review,
   file,
   jobRole,
+  language,
   handleDownloadPDF,
   resetApp,
 }) => {
@@ -39,11 +43,13 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
+  const [showCoverLetter, setShowCoverLetter] = useState(false);
+
   const handleShare = async (platform: string) => {
     try {
-      setIsLoading(prev => ({ ...prev, [platform]: true }));
+      setIsLoading((prev) => ({ ...prev, [platform]: true }));
       // Small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {
       toast({
         title: "Error",
@@ -51,13 +57,37 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(prev => ({ ...prev, [platform]: false }));
+      setIsLoading((prev) => ({ ...prev, [platform]: false }));
     }
   };
 
+  const handleGenerateCoverLetter = () => {
+    setShowCoverLetter(true);
+    // Scroll to bottom after a small delay to ensure the component is rendered
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    }, 100);
+  };
+
+  // Add event listener for the generateCoverLetter event
+  useEffect(() => {
+    const handleCoverLetterEvent = () => {
+      handleGenerateCoverLetter();
+    };
+
+    window.addEventListener('generateCoverLetter', handleCoverLetterEvent);
+    
+    return () => {
+      window.removeEventListener('generateCoverLetter', handleCoverLetterEvent);
+    };
+  }, []);
+
   const copyToClipboard = async () => {
     try {
-      setIsLoading(prev => ({ ...prev, clipboard: true }));
+      setIsLoading((prev) => ({ ...prev, clipboard: true }));
       const summary = `CV Review for ${file?.name || "my CV"} targeting ${jobRole}\nScore: ${review?.score}/100\n${window?.location?.href}`;
       await navigator.clipboard.writeText(summary);
       setCopied(true);
@@ -73,7 +103,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(prev => ({ ...prev, clipboard: false }));
+      setIsLoading((prev) => ({ ...prev, clipboard: false }));
     }
   };
 
@@ -86,6 +116,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
       return "";
     }
   };
+
   return (
     <motion.div
       key="results"
@@ -97,37 +128,60 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
     >
       <div className="w-full max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center mb-6 sm:mb-8">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              onClick={resetApp}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full shadow-lg text-sm sm:text-base"
-            >
-              <Rocket className="w-5 h-5" />
-              Review Another CV
-            </Button>
-          </motion.div>
+          <div className="grid grid-cols-2 gap-4 w-full sm:w-auto sm:flex">
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
+              <Button
+                onClick={resetApp}
+                className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full shadow-lg text-sm sm:text-base"
+              >
+                <Rocket className="w-5 h-5" />
+                Review Another CV
+              </Button>
+            </motion.div>
 
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:hidden">
+              <Button
+                onClick={handleDownloadPDF}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-full shadow-lg text-sm"
+              >
+                <Download className="w-5 h-5" />
+                Download PDF
+              </Button>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="hidden sm:block">
+              <Button
+                onClick={handleDownloadPDF}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-full shadow-lg text-base"
+              >
+                <Download className="w-5 h-5" />
+                Download PDF Report
+              </Button>
+            </motion.div>
+          </div>
+
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
             <Button
-              onClick={handleDownloadPDF}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-full shadow-lg text-sm sm:text-base"
+              onClick={handleGenerateCoverLetter}
+              className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold rounded-full shadow-lg text-sm sm:text-base"
             >
-              <Download className="w-5 h-5" />
-              Download PDF Report
+              <FileText className="w-5 h-5" />
+              Generate Cover Letter
             </Button>
           </motion.div>
         </div>
 
         <GlassCard className="p-4 sm:p-6 md:p-8">
           {/* Shareable Review Section */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center mb-6 sm:mb-8">
-            <div className="font-semibold text-lg text-indigo-700 dark:text-indigo-300">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6 sm:mb-8 w-full">
+            <h3 className="font-semibold text-lg text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
               Share your review:
-            </div>
-            <div className="flex gap-2 flex-wrap justify-center sm:justify-end">
+            </h3>
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
+
               <Button
                 asChild
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0"
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-10 h-10 flex-shrink-0 p-0"
                 title="Share on Twitter"
                 onClick={() => handleShare("twitter")}
                 disabled={isLoading.twitter}
@@ -145,7 +199,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
                 >
                   <AnimatePresence mode="wait">
                     {isLoading.twitter ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5" />
                     ) : (
                       <Twitter className="w-5 h-5" />
                     )}
@@ -154,7 +208,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
               </Button>
               <Button
                 asChild
-                className="bg-green-500 hover:bg-green-600 text-white rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0"
+                className="bg-green-500 hover:bg-green-600 text-white rounded-full w-10 h-10 flex-shrink-0 p-0"
                 title="Share on WhatsApp"
                 onClick={() => handleShare("whatsapp")}
                 disabled={isLoading.whatsapp}
@@ -172,7 +226,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
                 >
                   <AnimatePresence mode="wait">
                     {isLoading.whatsapp ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5" />
                     ) : (
                       <MessageCircle className="w-5 h-5" />
                     )}
@@ -201,7 +255,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
                 >
                   <AnimatePresence mode="wait">
                     {isLoading.email ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5" />
                     ) : (
                       <Mail className="w-5 h-5" />
                     )}
@@ -235,6 +289,47 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
           />
         </GlassCard>
       </div>
+
+      {/* Cover Letter Section */}
+      {showCoverLetter && (
+        <div className="mt-8">
+          <CoverLetterSection
+            cvText={review.cvText || ""}
+            jobRole={jobRole}
+            language={language}
+            onBack={() => setShowCoverLetter(false)}
+            onGenerate={async (options) => {
+              try {
+                const response = await fetch("/api/generate-cover-letter", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    ...options,
+                    cvText: review.cvText,
+                    jobRole: options.jobRole || jobRole,
+                  }),
+                });
+
+                if (!response.ok) {
+                  throw new Error("Failed to generate cover letter");
+                }
+
+                return await response.json();
+              } catch (error) {
+                console.error("Error generating cover letter:", error);
+                toast({
+                  title: "Error",
+                  description: "Failed to generate cover letter. Please try again.",
+                  variant: "destructive",
+                });
+                throw error;
+              }
+            }}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };

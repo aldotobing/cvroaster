@@ -31,17 +31,9 @@ const CheckIcon = () => (
 );
 
 const LoadingAnimation = () => (
-  <motion.div 
-    className="relative w-5 h-5"
-    animate={{ rotate: 360 }}
-    transition={{ 
-      duration: 1.5, 
-      repeat: Infinity, 
-      ease: 'linear' 
-    }}
-  >
+  <div className="relative w-5 h-5">
     <Wand2 className="w-full h-full text-indigo-400" />
-  </motion.div>
+  </div>
 );
 
 const Confetti: React.FC<ConfettiProps> = ({ showConfetti, isDarkMode }) => {
@@ -113,33 +105,8 @@ const Confetti: React.FC<ConfettiProps> = ({ showConfetti, isDarkMode }) => {
                 repeatType: 'reverse' 
               }}
             >
-              {isLoading ? (
                 <LoadingAnimation />
-              ) : (
-                <FileText className="w-6 h-6 text-green-500" />
-              )}
             </motion.div>
-            
-            <div className="flex flex-col">
-              <motion.span 
-                className="font-semibold text-sm"
-                key={isLoading ? 'loading' : 'loaded'}
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -10, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isLoading ? 'Processing your document...' : 'Document successfully loaded!'}
-              </motion.span>
-              <motion.span 
-                className="text-xs opacity-70"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.7 }}
-                transition={{ delay: 0.2 }}
-              >
-                {isLoading ? 'This will just take a moment' : 'Analyzing content...'}
-              </motion.span>
-            </div>
             
             {!isLoading && (
               <motion.div

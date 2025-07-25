@@ -242,6 +242,7 @@ export default function CVReviewer() {
               review={review}
               file={file}
               jobRole={jobRole}
+              language={language}
               handleDownloadPDF={handleDownloadPDF}
               resetApp={resetApp}
             />
