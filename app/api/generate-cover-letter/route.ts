@@ -1,15 +1,20 @@
-import { NextResponse } from 'next/server';
-import { generateCoverLetterStream } from '@/lib/cover-letter-service';
-import { CoverLetterOptions, CVReview } from '@/types/cv-review';
+import { NextResponse } from "next/server";
+import { generateCoverLetterStream } from "@/lib/cover-letter-service";
+import { CoverLetterOptions, CVReview } from "@/types/cv-review";
+
+// Handle all HTTP methods
+export const runtime = "edge";
+
+export const dynamic = "force-dynamic";
 
 // Handle CORS preflight request
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
 }
@@ -17,26 +22,26 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   // Handle CORS
   const headers = new Headers();
-  headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   try {
-    const { 
-      cvText, 
-      jobRole, 
-      tone = 'professional', 
-      length = 'medium',
+    const {
+      cvText,
+      jobRole,
+      tone = "professional",
+      length = "medium",
       highlightSkills = true,
       includePersonalTouch = true,
       companyName,
       jobDescription,
-      customInstructions = '',
-      language = 'english' 
+      customInstructions = "",
+      language = "english",
     } = await request.json();
 
     if (!cvText || !jobRole) {
       return NextResponse.json(
-        { error: 'CV text and job role are required' },
+        { error: "CV text and job role are required" },
         { status: 400 }
       );
     }
@@ -47,7 +52,7 @@ export async function POST(request: Request) {
       highlightSkills,
       includePersonalTouch,
       customInstructions,
-      language
+      language,
     };
 
     // Create a mock CVReview with required fields
@@ -55,13 +60,13 @@ export async function POST(request: Request) {
       score: 0,
       strengths: [],
       weaknesses: [],
-      structureFeedback: '',
-      grammarFeedback: '',
+      structureFeedback: "",
+      grammarFeedback: "",
       suggestions: [],
-      provider: 'Gemini',
+      provider: "Gemini",
       atsScore: 0,
-      atsFeedback: '',
-      cvText
+      atsFeedback: "",
+      cvText,
     };
 
     try {
@@ -73,7 +78,7 @@ export async function POST(request: Request) {
         companyName,
         jobDescription,
         language,
-        cvReview: mockCVReview
+        cvReview: mockCVReview,
       });
 
       // Create a new stream that formats the chunks for SSE
@@ -81,14 +86,14 @@ export async function POST(request: Request) {
         async start(controller) {
           try {
             const reader = stream.getReader();
-            let fullContent = '';
-            
+            let fullContent = "";
+
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
-              
+
               fullContent += value;
-              
+
               // Send each chunk as an SSE event
               controller.enqueue(
                 new TextEncoder().encode(
@@ -96,25 +101,28 @@ export async function POST(request: Request) {
                 )
               );
             }
-            
+
             // Send completion event
             controller.enqueue(
               new TextEncoder().encode(
-                `data: ${JSON.stringify({ 
-                  complete: true, 
-                  coverLetter: fullContent 
+                `data: ${JSON.stringify({
+                  complete: true,
+                  coverLetter: fullContent,
                 })}\n\n`
               )
             );
-            
+
             controller.close();
           } catch (error) {
-            console.error('Error processing stream:', error);
+            console.error("Error processing stream:", error);
             controller.enqueue(
               new TextEncoder().encode(
-                `data: ${JSON.stringify({ 
-                  error: error instanceof Error ? error.message : 'Failed to process stream',
-                  isError: true
+                `data: ${JSON.stringify({
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to process stream",
+                  isError: true,
                 })}\n\n`
               )
             );
@@ -122,30 +130,33 @@ export async function POST(request: Request) {
           }
         },
         cancel() {
-          console.log('SSE stream was cancelled by the client');
-        }
+          console.log("SSE stream was cancelled by the client");
+        },
       });
 
       const response = new Response(sseStream, {
         headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          ...Object.fromEntries(headers)
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          ...Object.fromEntries(headers),
         },
       });
-      
+
       return withCorsHeaders(response);
     } catch (error) {
-      console.error('Error in generate-cover-letter API:', error);
+      console.error("Error in generate-cover-letter API:", error);
       // Return a stream with the error message
       const errorStream = new ReadableStream({
         start(controller) {
           controller.enqueue(
             new TextEncoder().encode(
-              `data: ${JSON.stringify({ 
-                error: error instanceof Error ? error.message : 'Failed to generate cover letter',
-                isError: true
+              `data: ${JSON.stringify({
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to generate cover letter",
+                isError: true,
               })}\n\n`
             )
           );
@@ -156,28 +167,28 @@ export async function POST(request: Request) {
       const response = new Response(errorStream, {
         status: 500,
         headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          ...Object.fromEntries(headers)
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          ...Object.fromEntries(headers),
         },
       });
-      
+
       return withCorsHeaders(response);
     }
   } catch (error) {
-    console.error('Error in cover letter generation endpoint:', error);
+    console.error("Error in cover letter generation endpoint:", error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Failed to process cover letter request',
-        details: error instanceof Error ? error.message : 'Unknown error'
+      JSON.stringify({
+        error: "Failed to process cover letter request",
+        details: error instanceof Error ? error.message : "Unknown error",
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
-          ...Object.fromEntries(headers)
-        }
+          "Content-Type": "application/json",
+          ...Object.fromEntries(headers),
+        },
       }
     );
   }
@@ -186,13 +197,13 @@ export async function POST(request: Request) {
 // Add CORS headers to all responses
 function withCorsHeaders(response: Response): Response {
   const newHeaders = new Headers(response.headers);
-  newHeaders.set('Access-Control-Allow-Origin', '*');
-  newHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+  newHeaders.set("Access-Control-Allow-Origin", "*");
+  newHeaders.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers: newHeaders
+    headers: newHeaders,
   });
 }
