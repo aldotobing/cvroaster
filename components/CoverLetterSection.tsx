@@ -73,6 +73,7 @@ export default function CoverLetterSection({
     actionText?: string;
     action?: () => void;
   } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -97,6 +98,23 @@ export default function CoverLetterSection({
     return true;
   };
 
+  // Countdown effect for rate limit
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const timer = setTimeout(() => {
+      setTimeLeft(prev => Math.max(0, prev - 100));
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [timeLeft]);
+
+  const formatTime = (ms: number): string => {
+    const seconds = Math.floor(ms / 1000);
+    const milliseconds = Math.floor((ms % 1000) / 100);
+    return `${seconds}.${milliseconds}s`;
+  };
+
   const handleGenerate = async () => {
     if (!validateForm()) return;
 
@@ -104,6 +122,7 @@ export default function CoverLetterSection({
     setStreamingContent("");
     setCoverLetter(null);
     setError(null);
+    setTimeLeft(0);
     setShowPreview(true);
     
     // Force a small delay to ensure the skeleton shows up
@@ -181,6 +200,38 @@ export default function CoverLetterSection({
     } catch (err) {
       console.error("Error generating cover letter:", err);
       const errorObj = err as Error & { type?: string; originalError?: any };
+      
+      // Check for 429 status code (Rate Limit)
+      if (errorObj.originalError?.status === 429 || 
+          errorObj.originalError?.response?.status === 429 ||
+          errorObj.message?.includes('429')) {
+        const retryAfter = 60000; // 60 seconds
+        setTimeLeft(retryAfter);
+        
+        const updateError = () => ({
+          title: "Too Many Requests",
+          message: `You've reached the rate limit. Please wait ${formatTime(timeLeft)} before generating another cover letter. You can generate up to 2 cover letters per minute.`,
+          canRetry: timeLeft <= 0,
+          actionText: timeLeft <= 0 ? "OK" : undefined,
+          action: timeLeft <= 0 ? () => setError(null) : undefined
+        });
+        
+        setError(updateError());
+        
+        // Update the error message periodically to show the countdown
+        const timer = setInterval(() => {
+          setTimeLeft(prev => {
+            const newTimeLeft = Math.max(0, prev - 100);
+            if (newTimeLeft <= 0) {
+              clearInterval(timer);
+              setError(updateError());
+            }
+            return newTimeLeft;
+          });
+        }, 100);
+        
+        return () => clearInterval(timer);
+      }
       
       // Extract the original error if it exists
       const originalError = errorObj.originalError || errorObj;
