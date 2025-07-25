@@ -9,13 +9,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Download, Copy, RefreshCw, AlertCircle, ExternalLink, ArrowLeft, ArrowUpRight, Eye, Edit, Wand2, Save } from "lucide-react";
-import { ContentFormatter, formatContentForExport, formatContentForPlainText } from "./content-formatter";
+import {
+  Loader2,
+  Download,
+  Copy,
+  RefreshCw,
+  AlertCircle,
+  ExternalLink,
+  ArrowLeft,
+  ArrowUpRight,
+  Eye,
+  Edit,
+  Wand2,
+  Save,
+} from "lucide-react";
+import {
+  ContentFormatter,
+  formatContentForExport,
+  formatContentForPlainText,
+} from "./content-formatter";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import { CoverLetter, Tone, LetterLength } from "@/types/cv-review";
@@ -103,7 +133,7 @@ export default function CoverLetterSection({
     if (timeLeft <= 0) return;
 
     const timer = setTimeout(() => {
-      setTimeLeft(prev => Math.max(0, prev - 100));
+      setTimeLeft((prev) => Math.max(0, prev - 100));
     }, 100);
 
     return () => clearTimeout(timer);
@@ -124,9 +154,9 @@ export default function CoverLetterSection({
     setError(null);
     setTimeLeft(0);
     setShowPreview(true);
-    
+
     // Force a small delay to ensure the skeleton shows up
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     try {
       const response = await fetch("/api/generate-cover-letter", {
@@ -169,7 +199,10 @@ export default function CoverLetterSection({
               // Handle error from server
               if (data.error || data.isError) {
                 hasError = true;
-                throw new Error(data.error || "An error occurred while generating the cover letter");
+                throw new Error(
+                  data.error ||
+                    "An error occurred while generating the cover letter"
+                );
               }
 
               // Handle successful data
@@ -200,52 +233,82 @@ export default function CoverLetterSection({
     } catch (err) {
       console.error("Error generating cover letter:", err);
       const errorObj = err as Error & { type?: string; originalError?: any };
-      
+
       // Check for 429 status code (Rate Limit)
-      if (errorObj.originalError?.status === 429 || 
-          errorObj.originalError?.response?.status === 429 ||
-          errorObj.message?.includes('429')) {
+      if (
+        errorObj.originalError?.status === 429 ||
+        errorObj.originalError?.response?.status === 429 ||
+        errorObj.message?.includes("429") ||
+        (typeof Response !== "undefined" &&
+          errorObj instanceof Response &&
+          errorObj.status === 429)
+      ) {
         const retryAfter = 60000; // 60 seconds
         setTimeLeft(retryAfter);
-        
-        const updateError = () => ({
-          title: "Too Many Requests",
-          message: `You've reached the rate limit. Please wait ${formatTime(timeLeft)} before generating another cover letter. You can generate up to 2 cover letters per minute.`,
-          canRetry: timeLeft <= 0,
-          actionText: timeLeft <= 0 ? "OK" : undefined,
-          action: timeLeft <= 0 ? () => setError(null) : undefined
+
+        const updateError = (currentTimeLeft: number) => ({
+          title: "Rate Limit Reached",
+          message: `You can generate up to 2 cover letters per minute. Please wait ${formatTime(
+            currentTimeLeft
+          )} before trying again.`,
+          canRetry: currentTimeLeft <= 0,
+          actionText: currentTimeLeft <= 0 ? "Try Again" : undefined,
+          action:
+            currentTimeLeft <= 0
+              ? () => {
+                  setError(null);
+                  handleGenerate();
+                }
+              : undefined,
         });
-        
-        setError(updateError());
-        
-        // Update the error message periodically to show the countdown
+
+        setError(updateError(retryAfter));
+
+        // Update the error message and UI periodically to show the countdown
         const timer = setInterval(() => {
-          setTimeLeft(prev => {
+          setTimeLeft((prev) => {
             const newTimeLeft = Math.max(0, prev - 100);
+            setError(updateError(newTimeLeft));
             if (newTimeLeft <= 0) {
               clearInterval(timer);
-              setError(updateError());
             }
             return newTimeLeft;
           });
         }, 100);
-        
+
+        toast({
+          title: "Please Wait",
+          description:
+            "Rate limit reached. You can generate up to 2 cover letters per minute.",
+          variant: "default",
+          duration: 5000,
+        });
+
         return () => clearInterval(timer);
       }
-      
+
       // Extract the original error if it exists
       const originalError = errorObj.originalError || errorObj;
-      const errorMessage = originalError?.message || "An unknown error occurred";
-      const errorType = errorObj.type || 
-                      (errorMessage.includes('API key') ? 'API_KEY_ERROR' : 
-                       errorMessage.includes('quota') || errorMessage.includes('rate limit') ? 'RATE_LIMIT_ERROR' :
-                       errorMessage.includes('network') || errorMessage.includes('fetch failed') ? 'NETWORK_ERROR' : 'GENERIC_ERROR');
+      const errorMessage =
+        originalError?.message || "An unknown error occurred";
+      const errorType =
+        errorObj.type ||
+        (errorMessage.includes("API key")
+          ? "API_KEY_ERROR"
+          : errorMessage.includes("quota") ||
+            errorMessage.includes("rate limit")
+          ? "RATE_LIMIT_ERROR"
+          : errorMessage.includes("network") ||
+            errorMessage.includes("fetch failed")
+          ? "NETWORK_ERROR"
+          : "GENERIC_ERROR");
 
       switch (errorType) {
-        case 'API_KEY_ERROR':
+        case "API_KEY_ERROR":
           setError({
             title: "Invalid API Key",
-            message: "The API key for the AI service is not valid. Please check your configuration.",
+            message:
+              "The API key for the AI service is not valid. Please check your configuration.",
             canRetry: true,
             // actionText: "Check Configuration",
             // action: () => {
@@ -253,11 +316,12 @@ export default function CoverLetterSection({
             // }
           });
           break;
-          
-        case 'RATE_LIMIT_ERROR':
+
+        case "RATE_LIMIT_ERROR":
           setError({
             title: "Rate Limit Exceeded",
-            message: "You've reached the rate limit for the AI service. Please try again later or check your quota.",
+            message:
+              "You've reached the rate limit for the AI service. Please try again later or check your quota.",
             canRetry: true,
             // actionText: "Check Quota",
             // action: () => {
@@ -265,34 +329,39 @@ export default function CoverLetterSection({
             // }
           });
           break;
-          
-        case 'NETWORK_ERROR':
+
+        case "NETWORK_ERROR":
           setError({
             title: "Connection Error",
-            message: "Unable to connect to the AI service. Please check your internet connection and try again.",
-            canRetry: true
+            message:
+              "Unable to connect to the AI service. Please check your internet connection and try again.",
+            canRetry: true,
           });
           break;
-          
+
         default:
           // For generic errors, include more details if available
-          const detailedMessage = originalError?.response?.data?.error?.message || 
-                                originalError?.response?.message || 
-                                errorMessage;
-                                  
+          const detailedMessage =
+            originalError?.response?.data?.error?.message ||
+            originalError?.response?.message ||
+            errorMessage;
+
           setError({
             title: "Something Went Wrong",
-            message: detailedMessage.length > 150 
-              ? "An error occurred while generating your cover letter. Please try again." 
-              : detailedMessage,
-            canRetry: true
+            message:
+              detailedMessage.length > 150
+                ? "An error occurred while generating your cover letter. Please try again."
+                : detailedMessage,
+            canRetry: true,
           });
       }
-      
+
       // Show toast for the error
       const toastTitle = error?.title || "Error";
-      const toastMessage = error?.message || "An error occurred while generating your cover letter.";
-      
+      const toastMessage =
+        error?.message ||
+        "An error occurred while generating your cover letter.";
+
       toast({
         title: toastTitle,
         description: toastMessage,
@@ -305,12 +374,15 @@ export default function CoverLetterSection({
 
   const handleCopyToClipboard = async () => {
     if (!coverLetter) return;
-    const contentToCopy = formatContentForPlainText(editedContent || coverLetter.content);
+    const contentToCopy = formatContentForPlainText(
+      editedContent || coverLetter.content
+    );
     await navigator.clipboard.writeText(contentToCopy);
     setIsCopied(true);
     toast({
       title: "Copied to clipboard",
-      description: "The formatted cover letter has been copied to your clipboard.",
+      description:
+        "The formatted cover letter has been copied to your clipboard.",
     });
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -319,53 +391,55 @@ export default function CoverLetterSection({
     if (!coverLetter) return;
 
     const content = editedContent || coverLetter.content;
-    const baseFileName = `cover-letter-${coverLetter.jobRole.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}`;
+    const baseFileName = `cover-letter-${coverLetter.jobRole
+      .toLowerCase()
+      .replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}`;
     const fileName = `${baseFileName}.${format}`;
 
     if (format === "docx") {
       try {
         // Convert markdown to docx format
         const paragraphs = [];
-        const lines = content.split('\n').filter(line => line.trim() !== '');
-        
+        const lines = content.split("\n").filter((line) => line.trim() !== "");
+
         for (const line of lines) {
-          if (line.startsWith('## ')) {
+          if (line.startsWith("## ")) {
             // Heading 2
             paragraphs.push(
               new Paragraph({
-                text: line.replace('## ', ''),
+                text: line.replace("## ", ""),
                 heading: HeadingLevel.HEADING_2,
                 spacing: { after: 200 },
               })
             );
-          } else if (line.startsWith('### ')) {
+          } else if (line.startsWith("### ")) {
             // Heading 3
             paragraphs.push(
               new Paragraph({
-                text: line.replace('### ', ''),
+                text: line.replace("### ", ""),
                 heading: HeadingLevel.HEADING_3,
                 spacing: { before: 200, after: 100 },
               })
             );
-          } else if (line.startsWith('- ')) {
+          } else if (line.startsWith("- ")) {
             // List item
             paragraphs.push(
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: '• ' + line.substring(2),
+                    text: "• " + line.substring(2),
                     size: 24,
-                  })
+                  }),
                 ],
                 indent: { left: 400 },
                 spacing: { before: 50, after: 50 },
               })
             );
-          } else if (line.trim() === '') {
+          } else if (line.trim() === "") {
             // Empty line (add some spacing)
             paragraphs.push(
               new Paragraph({
-                text: '',
+                text: "",
                 spacing: { before: 100, after: 100 },
               })
             );
@@ -393,11 +467,11 @@ export default function CoverLetterSection({
                 }),
                 ...paragraphs,
                 new Paragraph({
-                  text: 'Sincerely,',
+                  text: "Sincerely,",
                   spacing: { before: 400 },
                 }),
                 new Paragraph({
-                  text: 'Your Name',
+                  text: "Your Name",
                   spacing: { before: 400 },
                 }),
               ],
@@ -408,16 +482,15 @@ export default function CoverLetterSection({
         // Generate the document and trigger download
         const blob = await Packer.toBlob(doc);
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-
       } catch (error) {
-        console.error('Error generating DOCX:', error);
+        console.error("Error generating DOCX:", error);
         toast({
           title: "Error",
           description: "Failed to generate DOCX file. Please try again.",
@@ -431,10 +504,10 @@ export default function CoverLetterSection({
       const rtfContent = `{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033
 {\\fonttbl{\\f0\\fnil\\fcharset0 Arial;}}\
 \viewkind4\\uc1\\pard\\f0\\fs24
-${formattedContent.replace(/\n/g, '\\\\par ')}
+${formattedContent.replace(/\n/g, "\\\\par ")}
 \\par
 }`;
-      
+
       const blob = new Blob([rtfContent], { type: "application/rtf" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -623,9 +696,12 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                 <div className="flex items-center justify-center min-h-[400px] bg-muted/50 rounded-lg">
                   <div className="text-center space-y-4 p-6">
                     <Wand2 className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Your Cover Letter Awaits</h3>
+                    <h3 className="text-lg font-medium">
+                      Your Cover Letter Awaits
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      Generate a personalized cover letter based on your CV and job details.
+                      Generate a personalized cover letter based on your CV and
+                      job details.
                     </p>
                   </div>
                 </div>
@@ -638,46 +714,86 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <div className="flex flex-col items-center justify-center min-h-[400px] bg-muted/50 rounded-lg p-6 text-center border border-destructive/20">
-                  <div className="bg-destructive/10 p-4 rounded-full mb-4">
-                    <Wand2 className="h-10 w-10 text-destructive" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">{error.title || "Something went wrong"}</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md">
-                    {error.message}
-                  </p>
-                  <div className="flex gap-3">
-                    {error.canRetry && (
-                      <Button 
-                        onClick={handleGenerate}
-                        disabled={isGenerating}
-                        className="gap-2"
-                        variant="outline"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Retrying...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4" />
-                            Try Again
-                          </>
+                <div className="flex flex-col items-center justify-center min-h-[400px] bg-muted/50 rounded-lg p-6 text-center">
+                  {timeLeft > 0 ? (
+                    <>
+                      <div className="bg-blue-500/10 p-4 rounded-full mb-4">
+                        <div className="relative">
+                          <svg
+                            className="w-10 h-10 transform -rotate-90"
+                            viewBox="0 0 36 36"
+                          >
+                            <circle
+                              cx="18"
+                              cy="18"
+                              r="16"
+                              fill="none"
+                              className="stroke-current text-blue-100 dark:text-blue-900"
+                              strokeWidth="2"
+                            />
+                            <circle
+                              cx="18"
+                              cy="18"
+                              r="16"
+                              fill="none"
+                              className="stroke-current text-blue-500"
+                              strokeWidth="2"
+                              strokeDasharray={`${
+                                100 - (timeLeft / 60000) * 100
+                              }, 100`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium text-blue-500">
+                            {Math.ceil(timeLeft / 1000)}s
+                          </span>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">
+                        {error.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-4 max-w-md">
+                        {error.message}
+                      </p>
+                      <div className="text-sm text-muted-foreground">
+                        The button will be enabled automatically when ready
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-blue-500/10 p-4 rounded-full mb-4">
+                        <RefreshCw className="h-10 w-10 text-blue-500" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">
+                        {error.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-6 max-w-md">
+                        {error.message}
+                      </p>
+                      <div className="flex gap-3">
+                        {error.canRetry && (
+                          <Button
+                            onClick={error.action || handleGenerate}
+                            disabled={isGenerating}
+                            className="gap-2"
+                            variant="default"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                {error.actionText || "Try Again"}
+                              </>
+                            )}
+                          </Button>
                         )}
-                      </Button>
-                    )}
-                    {error.action && (
-                      <Button 
-                        onClick={error.action}
-                        variant="outline"
-                        className="gap-2"
-                      >
-                        {error.actionText || "Learn More"}
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </motion.div>
             ) : (
@@ -687,7 +803,7 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
-              >  
+              >
                 <Card className="shadow-xl dark:shadow-gray-800/20 rounded-2xl overflow-hidden h-full flex flex-col">
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -695,7 +811,8 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                         <CardTitle>Generated Cover Letter</CardTitle>
                         <CardDescription>
                           For: {formData.jobRole}
-                          {formData.companyName && ` at ${formData.companyName}`}
+                          {formData.companyName &&
+                            ` at ${formData.companyName}`}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
@@ -724,7 +841,8 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                                       setIsEditing(false);
                                       toast({
                                         title: "Changes saved",
-                                        description: "Your changes have been saved.",
+                                        description:
+                                          "Your changes have been saved.",
                                       });
                                     }}
                                     className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
@@ -774,8 +892,18 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                                       exit={{ opacity: 0, y: -10 }}
                                       className="text-green-600 flex items-center gap-1"
                                     >
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M5 13l4 4L19 7"
+                                        />
                                       </svg>
                                     </motion.span>
                                   ) : (
@@ -817,13 +945,13 @@ ${formattedContent.replace(/\n/g, '\\\\par ')}
                           value={editedContent}
                           onChange={(e) => setEditedContent(e.target.value)}
                           className="h-full min-h-[500px] font-sans text-base border-0 focus-visible:ring-2 focus-visible:ring-blue-200 rounded-none p-6"
-                          style={{ lineHeight: '1.7' }}
+                          style={{ lineHeight: "1.7" }}
                         />
                       </motion.div>
                     ) : isGenerating && !coverLetter ? (
                       <div className="p-6 h-full">
                         {!streamingContent ? (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.3 }}
