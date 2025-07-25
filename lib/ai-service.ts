@@ -286,12 +286,12 @@ function parseAIResponse(text: string): Omit<CVReview, "provider"> {
   } catch (error) {
     // Fallback response if parsing fails
     return {
-      score: 70,
+      score: 0,
       strengths: ["CV successfully uploaded and processed"],
       weaknesses: ["Unable to provide detailed analysis at this time"],
       structureFeedback: "Please try again for detailed feedback.",
       grammarFeedback: "Please try again for detailed feedback.",
-      atsScore: 60,
+      atsScore: 0,
       atsFeedback: "Please try again for detailed ATS analysis.",
       suggestions: [{
         from: "CV content could not be processed",
