@@ -99,12 +99,11 @@ export default function CoverLetterSection({
   // Format the rate limit message with proper spacing
   const formatRateLimitMessage = (timeLeft: number | null) => {
     if (timeLeft === null || timeLeft <= 0) {
-      return "You can generate cover letters again now! 😊\n\nRemember: 2 cover letters per minute limit applies.";
+      return "You can generate cover letters again now! 😊\n\n"
+      + "Remember: 2 cover letters per minute limit applies.";
     }
     
-    return `⏳  Rate Limit Reached  ⏳
-
-You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly!
+    return `⏳ You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly!
 
 ⏱️  Time remaining: ${formatTime(timeLeft)} seconds
 
