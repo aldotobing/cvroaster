@@ -64,23 +64,29 @@ export default function CoverLetterSection({
     };
   }, []);
 
-  // Effect to handle the countdown timer
+  // Effect to handle the countdown timer and update error message
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      return;
+    if (timeLeft === null) return;
+
+    // Update the error message with current time left
+    setError(prev => prev ? {
+      ...prev,
+      message: formatRateLimitMessage(timeLeft),
+      canRetry: timeLeft <= 0
+    } : prev);
+
+    // Set up the interval for the countdown
+    if (timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => (prev !== null ? Math.max(0, prev - 100) : 0));
+      }, 100);
     }
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => (prev !== null ? Math.max(0, prev - 100) : 0));
-    }, 100);
-
+    // Cleanup interval when component unmounts or timeLeft changes
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [timeLeft]);
@@ -88,6 +94,21 @@ export default function CoverLetterSection({
   // Format time in seconds with 1 decimal place
   const formatTime = (ms: number) => {
     return (ms / 1000).toFixed(1);
+  };
+
+  // Format the rate limit message with proper spacing
+  const formatRateLimitMessage = (timeLeft: number | null) => {
+    if (timeLeft === null || timeLeft <= 0) {
+      return "You can generate cover letters again now! 😊\n\nRemember: 2 cover letters per minute limit applies.";
+    }
+    
+    return `⏳  Rate Limit Reached  ⏳
+
+You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly!
+
+⏱️  Time remaining: ${formatTime(timeLeft)} seconds
+
+Please wait a moment before trying again.`;
   };
 
   const initialFormData = {
@@ -273,7 +294,7 @@ export default function CoverLetterSection({
           setTimeLeft(60000);
           setError({
             title: "Oops! Too Many Requests :(",
-            message: `You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly! ⏳\n\nTime remaining: ${formatTime(60000)} seconds\n\nPlease wait a moment before trying again.`,
+            message: formatRateLimitMessage(60000),
             canRetry: false, // Disable retry until countdown finishes
             actionText: "I'll wait",
             action: () => {
@@ -281,30 +302,6 @@ export default function CoverLetterSection({
               setIsGenerating(false);
             }
           });
-          
-          // Update the error message with the countdown
-          const updateTimer = () => {
-            if (timeLeft !== null && timeLeft > 0) {
-              setError(prev => ({
-                ...prev!,
-                message: `You can only generate 2 cover letters per minute. I'm working hard to serve everyone fairly! ⏳\n\nTime remaining: ${formatTime(timeLeft)} seconds\n\nPlease wait a moment before trying again.`,
-                canRetry: timeLeft <= 0
-              }));
-            } else if (timeLeft === 0) {
-              setError(prev => ({
-                ...prev!,
-                message: "You can generate cover letters again now! 😊\n\nRemember: 2 cover letters per minute limit applies.",
-                canRetry: true
-              }));
-            }
-          };
-          
-          // Update the timer display
-          const timerInterval = setInterval(updateTimer, 100);
-          
-          // Cleanup interval when component unmounts or error is dismissed
-          return () => clearInterval(timerInterval);
-          
           break;
           
         case 'NETWORK_ERROR':
